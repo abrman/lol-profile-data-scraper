@@ -1,0 +1,160 @@
+body {
+  background: #4b48da;
+  background: linear-gradient(90deg, #4b48da 0%, #b17fcc 100%);
+  color: #fff;
+  font-family: "Rubik", sans-serif;
+}
+
+.landing-page-welcome {
+  display: flex;
+  padding: 5vw;
+  font-size: 1rem;
+  height: 100vh;
+  box-sizing: border-box;
+  flex-direction: column;
+  width: 45vw;
+  min-width: 400px;
+}
+
+.landing-page-welcome h1 {
+  color: #ffe608;
+  font-weight: 500;
+  font-size: 1.6rem;
+}
+
+.landing-page-welcome ol {
+  padding: 0 1.2rem;
+  margin-top: 0;
+}
+
+.landing-page-welcome .share {
+  border: 3px solid #ffe608;
+  background: transparent;
+  color: #ffe608;
+  border-radius: 1vh;
+  padding: 0.8rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  margin-top: auto;
+}
+
+.landing-page-welcome .share:hover {
+  background: #ffe608;
+  color: #4b48da;
+}
+
+.landing-page-welcome .note {
+  font-size: 0.7rem;
+}
+
+.side-panel {
+  position: fixed;
+  left: 100%;
+  top: 50%;
+  width: 100vw;
+  height: 70vh;
+  max-width: 1080px;
+  transform: translate(-50%, -60%);
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: transform 0.3s ease;
+  max-height: 60vw;
+}
+
+[data-view="video"] .side-panel {
+  max-width: none;
+  padding: 0;
+  margin: 0;
+  height: calc(50vw / 16 * 9);
+  width: 50vw;
+  transform: translate(-103%, -50%);
+}
+
+@media screen and (max-aspect-ratio: 1/1), screen and (max-height: 550px) {
+  [data-view="landing"] .side-panel {
+    transform: translateX(50%);
+  }
+  [data-view="landing"] .landing-page-welcome {
+    width: 50vw;
+  }
+}
+
+.side-panel .loot-image {
+  height: 100%;
+  opacity: 1;
+  transition: 0.3s ease;
+}
+
+[data-view="video"] .side-panel .loot-imag {
+  opacity: 0;
+}
+
+.side-panel video {
+  height: 100%;
+  max-height: 100%;
+  max-width: 100vw;
+}
+
+.video-container {
+  height: 100%;
+  width: 0;
+  position: relative;
+}
+
+.video-container > * {
+  transform: translateX(-50%);
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.side-panel .table {
+  width: 620px;
+  height: 70%;
+  transform: translate(-50%, 30vh);
+  background: #fff;
+  border-radius: 5px 0 0 5px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+  color: #333;
+  overflow: hidden;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+[data-view="video"] .side-panel .table {
+  transform: translate(100%, 30vh);
+  opacity: 0;
+}
+
+.side-panel .table table {
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.side-panel .table td,
+.side-panel th {
+  white-space: nowrap;
+  border: 1px solid #ddd;
+  padding: 1.2vh;
+}
+
+.side-panel .table th {
+  background-color: #eee;
+}
+
+.side-panel .table tbody tr td:first-of-type {
+  background-color: #eee;
+}
+
+@media screen and (max-height: 550px) {
+  .landing-page-welcome {
+    font-size: 12px;
+  }
+}
+
+img {
+  max-height: 100vh;
+}
