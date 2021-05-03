@@ -1,3 +1,5 @@
+import React from "react";
+
 interface InterfaceManager {
   [x: string]: any;
 }
@@ -5,75 +7,89 @@ interface InterfaceManager {
 export const interfaceManager: InterfaceManager = {
   initiated: false,
   pixelCanvas: document.createElement("canvas").getContext("2d"),
-  menuLineCanvas: document.createElement("canvas").getContext("2d"),
+  edgeSearch: document.createElement("canvas").getContext("2d"),
+  searchCoordinates: [],
+  videoElement: React.createRef<HTMLVideoElement>(),
   current_ui: "main_menu",
 
-  ui_elements: {
-    main_menu: [
-      ["main_menu_with_store", 0.5342, 0.059, true],
-      ["main_menu_no_store", 0.9844, 0.0191],
-    ],
-    main_menu_with_store: [
-      ["home", 0.1982, 0.0174, true],
-      ["tft", 0.251, 0.0174, true],
-      ["clash", 0.3047, 0.0174, true],
-      ["profile", 0.5283, 0.0174, true],
-      ["collection", 0.5713, 0.0174, true],
-      ["loot", 0.6133, 0.0174, true],
-      ["discount_store", 0.6553, 0.0174, true],
-      ["store", 0.6973, 0.0174, true],
-    ],
-    main_menu_no_store: [
-      ["home", 0.1982, 0.0174, true],
-      ["tft", 0.251, 0.0174, true],
-      ["clash", 0.3047, 0.0174, true],
-      ["profile", 0.5713, 0.0174, true],
-      ["collection", 0.6133, 0.0174, true],
-      ["loot", 0.6553, 0.0174, true],
-      ["store", 0.6973, 0.0174, true],
-    ],
-    collection: [
-      ["collection-champions", 0.0703, 0.151],
-      ["collection-skins", 0.1387, 0.151],
-      ["collection-emotes", 0.1963, 0.151],
-      ["collection-runes", 0.2578, 0.151],
-      ["collection-spells", 0.3184, 0.151],
-      ["collection-items", 0.3691, 0.151],
-      ["collection-icons", 0.4287, 0.151],
-      ["collection-wards", 0.4848, 0.151],
-      ["collection-chromas", 0.5527, 0.151],
-    ],
+  collectionLabels: [
+    "champions",
+    "skins",
+    "emotes",
+    "runes",
+    "spells",
+    "items",
+    "icons",
+    "wards",
+    "chromas",
+  ],
+  ui_data: {
+    1920: {
+      edgeSearch: { x: 1393, y: 32 },
+      storePixelOffset: { x: -55, y: -30 },
+      menuItemGaps: 81,
+      profileIconOffset: { x: -315, y: 60 },
+      collection: {
+        y: 164,
+        x: [134, 266, 376, 494, 611, 708, 823, 930, 1061],
+      },
+    },
+    1600: {
+      edgeSearch: { x: 1161, y: 25 },
+      storePixelOffset: { x: -46, y: -24 },
+      menuItemGaps: 68,
+      profileIconOffset: { x: -260, y: 50 },
+      collection: {
+        y: 137,
+        x: [112, 221, 314, 412, 509, 590, 685, 775, 884],
+      },
+    },
+    1280: {
+      edgeSearch: { x: 929, y: 21 },
+      storePixelOffset: { x: -37, y: -20 },
+      menuItemGaps: 54,
+      profileIconOffset: { x: -210, y: 40 },
+      collection: {
+        y: 109,
+        x: [89, 177, 251, 329, 407, 472, 548, 620, 707],
+      },
+    },
+    1024: {
+      edgeSearch: { x: 743, y: 16 },
+      storePixelOffset: { x: -29, y: -15 },
+      menuItemGaps: 43,
+      profileIconOffset: { x: -168, y: 30 },
+      collection: {
+        y: 87,
+        x: [71, 142, 201, 263, 326, 377, 438, 496, 565],
+      },
+    },
   },
+
   init(videoElement: React.RefObject<HTMLVideoElement>) {
     if (this.initiated) return;
+    this.videoElement = videoElement;
     this.pixelCanvas.canvas.height = 1;
     this.pixelCanvas.canvas.width = 1;
-    this.menuLineCanvas.canvas.width = 200;
-    this.menuLineCanvas.canvas.height = 1;
-    this.pixelOffset = this.calculateMenuPixelOffset(videoElement);
+    this.edgeSearch.canvas.width = 200;
+    this.edgeSearch.canvas.height = 1;
+    this.storePixel = this.findStorePixel();
+    this.searchCoordinates = this.generateSearchCoordinates();
     this.initiated = true;
   },
-  getPixelDataFromVideo(
-    videoElement: React.RefObject<HTMLVideoElement>,
-    x: number,
-    y: number,
-    offsetX: boolean = false
-  ) {
-    if (
-      videoElement == null ||
-      videoElement.current == null ||
-      this.pixelCanvas == null
-    )
-      return;
 
-    if (x < 1) {
-      x =
-        Math.round(x * videoElement.current.videoWidth) +
-        (offsetX ? this.pixelOffset : 0);
-      y = Math.round(y * videoElement.current.videoHeight);
-    }
-
-    this.pixelCanvas.drawImage(videoElement.current, x, y, 1, 1, 0, 0, 1, 1);
+  getPixelDataFromVideo(x: number, y: number) {
+    this.pixelCanvas.drawImage(
+      this.videoElement.current,
+      x,
+      y,
+      1,
+      1,
+      0,
+      0,
+      1,
+      1
+    );
     return Array.from(this.pixelCanvas.getImageData(0, 0, 1, 1).data).splice(
       0,
       3
@@ -82,24 +98,26 @@ export const interfaceManager: InterfaceManager = {
 
   currentInterface(videoElement: React.RefObject<HTMLVideoElement>) {
     this.init(videoElement);
+    if (!this.initiated) return;
     this.current_ui = "main_menu";
-    while (Object.keys(this.ui_elements).indexOf(this.current_ui) >= 0) {
-      //   console.log(this.current_ui);
-      //   console.log(this.pixelOffset);
-      this.calculateMenuPixelOffset(videoElement);
-      this.current_ui = this.findFirstBright(
-        this.ui_elements[
-          this.current_ui
-        ].map((v: [string, number, number, boolean]) => [
-          v[0],
-          this.getPixelDataFromVideo(
-            videoElement,
-            v[1],
-            v[2],
-            v[3] ? v[3] : undefined
-          ),
-        ])
+    while (Object.keys(this.searchCoordinates).indexOf(this.current_ui) >= 0) {
+      //   console.log(this.searchCoordinates, this.current_ui);
+
+      const active_menu_items = this.searchCoordinates[this.current_ui].filter(
+        ([name, x, y, expectedColor]: [string, number, number, number[]]) => {
+          const [r, g, b] = this.getPixelDataFromVideo(x, y);
+          return (
+            Math.abs(r - expectedColor[0]) +
+              Math.abs(g - expectedColor[1]) +
+              Math.abs(b - expectedColor[2]) <
+            100
+          );
+        }
       );
+      //   if (active_menu_items.length > 1)
+      //     console.error(`More than one active menu item`, active_menu_items);
+      if (active_menu_items[0]) this.current_ui = active_menu_items[0][0];
+      else this.current_ui = false;
     }
     return this.current_ui;
   },
@@ -116,22 +134,11 @@ export const interfaceManager: InterfaceManager = {
     return false;
   },
 
-  // Caused by different RP and Blue essence value widths
-  calculateMenuPixelOffset(videoElement: React.RefObject<HTMLVideoElement>) {
-    if (
-      videoElement == null ||
-      videoElement.current == null ||
-      this.pixelCanvas == null
-    )
-      return;
-
-    const vw = videoElement.current.videoWidth;
-    const vh = videoElement.current.videoHeight;
-
-    this.menuLineCanvas.drawImage(
-      videoElement.current,
-      Math.floor(vw * 0.7),
-      Math.floor(vh * 0.025),
+  findStorePixel() {
+    this.edgeSearch.drawImage(
+      this.videoElement.current,
+      this.ui_data[this.videoElement.current.videoWidth].edgeSearch.x - 100,
+      this.ui_data[this.videoElement.current.videoWidth].edgeSearch.y,
       200,
       1,
       0,
@@ -139,23 +146,61 @@ export const interfaceManager: InterfaceManager = {
       200,
       1
     );
-    const greenChannel = this.menuLineCanvas
+    const greenChannel = this.edgeSearch
       .getImageData(0, 0, 200, 1)
       .data.filter((_: number, i: number) => i % 4 == 1);
     let i;
     for (i = 0; i < greenChannel.length; i++)
-      if (greenChannel[i] > 30) {
-        console.log(greenChannel[i], i);
+      if (greenChannel[i] > greenChannel[0] + 30) {
         break;
       }
 
-    const expectedValues: { [x: string]: number } = {
-      "1920": 49,
-      "1600": 41,
-      "1280": 33,
-      "1024": 27,
+    return {
+      x:
+        this.ui_data[this.videoElement.current.videoWidth].edgeSearch.x -
+        100 +
+        i +
+        this.ui_data[this.videoElement.current.videoWidth].storePixelOffset.x,
+      y:
+        this.ui_data[this.videoElement.current.videoWidth].edgeSearch.y +
+        this.ui_data[this.videoElement.current.videoWidth].storePixelOffset.y,
     };
+  },
 
-    return expectedValues[vw.toString()] - i;
+  generateSearchCoordinates() {
+    const yourStoreOpen =
+      this.getPixelDataFromVideo(
+        this.storePixel.x +
+          this.ui_data[this.videoElement.current.videoWidth].profileIconOffset
+            .x,
+        this.storePixel.y +
+          this.ui_data[this.videoElement.current.videoWidth].profileIconOffset.y
+      )[0] > 180;
+
+    return {
+      main_menu: [
+        "store",
+        yourStoreOpen ? "shop" : false,
+        "loot",
+        "collection",
+        "profile",
+      ]
+        .filter((v) => v !== false)
+        .map((menu_item, i) => [
+          menu_item,
+          this.storePixel.x -
+            this.ui_data[this.videoElement.current.videoWidth].menuItemGaps * i,
+          this.storePixel.y,
+          [1, 10, 19],
+        ]),
+      collection: this.ui_data[
+        this.videoElement.current.videoWidth
+      ].collection.x.map((x: number, i: number) => [
+        this.collectionLabels[i],
+        x,
+        this.ui_data[this.videoElement.current.videoWidth].collection.y,
+        [185, 185, 165],
+      ]),
+    };
   },
 };
