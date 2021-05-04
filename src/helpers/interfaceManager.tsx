@@ -148,7 +148,7 @@ export const interfaceManager: InterfaceManager = {
     );
     const greenChannel = this.edgeSearch
       .getImageData(0, 0, 200, 1)
-      .data.filter((_: number, i: number) => i % 4 == 1);
+      .data.filter((_: number, i: number) => i % 4 === 1);
     let i;
     for (i = 0; i < greenChannel.length; i++)
       if (greenChannel[i] > greenChannel[0] + 30) {
