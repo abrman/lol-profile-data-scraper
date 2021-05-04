@@ -41,7 +41,8 @@ export const lootCaptureManager: LootCaptureManager = {
     this.scrollBarCanvas.canvas.width = 1;
     this.scrollBarCanvas.canvas.height = 1080;
     this.matchingCanvas.canvas.width = this.ss[scraper.videoWidth].w;
-    this.matchingCanvas.canvas.height = this.ss[scraper.videoWidth].h;
+    this.matchingCanvas.canvas.height =
+      scraper.videoHeight - this.ss[scraper.videoWidth].y;
 
     // Prevent finishing initialization if the scrollBar UI didn't load yet
     if (this.lootScrollBar().size < 6 / scraper.videoHeight) return;
@@ -81,11 +82,11 @@ export const lootCaptureManager: LootCaptureManager = {
   },
 
   firstFreeRowIndex() {
-    const redChannel = [
+    const blueChannel = [
       ...this.lootCanvas.getImageData(0, 0, 1, this.lootCanvas.canvas.height)
         .data,
     ].filter((v, i) => i % 4 === 2);
-    return redChannel.map((v) => (v > 0 ? 1 : 0)).indexOf(0);
+    return blueChannel.map((v) => (v > 0 ? 1 : 0)).indexOf(0);
   },
 
   attemptScreenshot() {
@@ -106,16 +107,21 @@ export const lootCaptureManager: LootCaptureManager = {
           this.ss[scraper.videoWidth].add
       );
     else {
+      const atBottom = this.lootScrollBar().atBottom;
       this.matchingCanvas.drawImage(
         scraper.videoElement.current,
         /*source x*/ this.ss[scraper.videoWidth].x,
         /*source y*/ this.ss[scraper.videoWidth].y,
         /*source w*/ this.ss[scraper.videoWidth].w,
-        /*source h*/ this.ss[scraper.videoWidth].h,
+        /*source h*/ atBottom
+          ? scraper.videoHeight - this.ss[scraper.videoWidth].y
+          : this.ss[scraper.videoWidth].h,
         /*target x*/ 0,
         /*target y*/ 0,
         /*target w*/ this.ss[scraper.videoWidth].w,
-        /*target h*/ this.ss[scraper.videoWidth].h
+        /*target h*/ atBottom
+          ? scraper.videoHeight - this.ss[scraper.videoWidth].y
+          : this.ss[scraper.videoWidth].h
       );
       const searchData = this.matchingCanvas.getImageData(0, 0, 80, 80).data;
       const matchingData = this.lootCanvas.getImageData(
@@ -158,16 +164,32 @@ export const lootCaptureManager: LootCaptureManager = {
             continue diagonalSearch;
           }
         }
+        // this.lootCanvas.beginPath();
+        // this.lootCanvas.moveTo(
+        //   0,
+        //   freeRowIndex - this.ss[scraper.videoWidth].h + i - 1
+        // );
+        // this.lootCanvas.lineTo(
+        //   400,
+        //   freeRowIndex - this.ss[scraper.videoWidth].h + i - 1
+        // );
+        // this.lootCanvas.strokeStyle = "red";
+        // this.lootCanvas.stroke();
+        console.log("Found match");
         this.lootCanvas.drawImage(
           this.matchingCanvas.canvas,
           /*source x*/ 0,
           /*source y*/ 0,
           /*source w*/ this.ss[scraper.videoWidth].w,
-          /*source h*/ this.ss[scraper.videoWidth].h,
+          /*source h*/ atBottom
+            ? scraper.videoHeight - this.ss[scraper.videoWidth].y
+            : this.ss[scraper.videoWidth].h,
           /*target x*/ 0,
           /*target y*/ freeRowIndex - this.ss[scraper.videoWidth].h + i,
           /*target w*/ this.ss[scraper.videoWidth].w,
-          /*target h*/ this.ss[scraper.videoWidth].h
+          /*target h*/ atBottom
+            ? scraper.videoHeight - this.ss[scraper.videoWidth].y
+            : this.ss[scraper.videoWidth].h
         );
         break;
       }
@@ -175,6 +197,7 @@ export const lootCaptureManager: LootCaptureManager = {
   },
 
   loop() {
+    console.log("loop");
     this.init();
     if (!this.initialized) return;
 
