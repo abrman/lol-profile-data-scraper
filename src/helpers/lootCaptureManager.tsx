@@ -175,7 +175,7 @@ export const lootCaptureManager: LootCaptureManager = {
         // );
         // this.lootCanvas.strokeStyle = "red";
         // this.lootCanvas.stroke();
-        console.log("Found match");
+
         this.lootCanvas.drawImage(
           this.matchingCanvas.canvas,
           /*source x*/ 0,
@@ -197,7 +197,6 @@ export const lootCaptureManager: LootCaptureManager = {
   },
 
   loop() {
-    console.log("loop");
     this.init();
     if (!this.initialized) return;
 
