@@ -10,6 +10,8 @@ export const lootCaptureManager: LootCaptureManager = {
   lootCanvas: document.createElement("canvas").getContext("2d"),
   scrollBarCanvas: document.createElement("canvas").getContext("2d"),
 
+  finalScreenshotComplete: false,
+
   scrollBarX: 0,
   scrollBarY1: 0,
   scrollBarY2: 0,
@@ -226,23 +228,44 @@ export const lootCaptureManager: LootCaptureManager = {
                 this.screenshotAreaData[scraper.videoWidth].y
             : this.screenshotAreaData[scraper.videoWidth].h
         );
+
+        if (atBottom) {
+          this.cropFinalScreenshot(
+            freeRowIndex -
+              this.screenshotAreaData[scraper.videoWidth].h +
+              i +
+              scraper.videoHeight -
+              this.screenshotAreaData[scraper.videoWidth].y
+          );
+        }
         break;
       }
     }
+  },
+
+  cropFinalScreenshot(canvasHeight: number) {
+    const screenshotData = this.lootCanvas.getImageData(
+      0,
+      0,
+      this.lootCanvas.canvas.width,
+      canvasHeight
+    );
+    this.lootCanvas.canvas.height = canvasHeight;
+    this.lootCanvas.putImageData(screenshotData, 0, 0);
+    this.finalScreenshotComplete = true;
   },
 
   loop() {
     this.init();
     if (!this.initialized) return;
 
-    if (this.scrollBar().atTop || this.firstFreeRowIndex() > 0)
+    if (
+      !this.finalScreenshotComplete &&
+      (this.scrollBar().atTop || this.firstFreeRowIndex() > 0)
+    )
       this.attemptScreenshot();
 
     if (typeof lootCaptureManager.setImg1 === "function")
       lootCaptureManager.setImg1(this.lootCanvas.canvas.toDataURL());
-    // if (typeof lootCaptureManager.setImg2 === "function")
-    //   lootCaptureManager.setImg2(this.matchingCanvas.canvas.toDataURL());
-    // if (typeof lootCaptureManager.setImg3 === "function")
-    //   lootCaptureManager.setImg3(this.scrollBarCanvas.canvas.toDataURL());
   },
 };
