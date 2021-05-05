@@ -155,6 +155,25 @@ body {
   }
 }
 
+.debug {
+  position: fixed;
+  left: 0;
+  top: 0;
+  /* opacity: 0.5; */
+  display: flex;
+  align-items: flex-start;
+  z-index: 10000;
+}
+
+.debug img {
+  margin-left: 10px;
+}
+
+.debug img:first-child {
+  height: 100vh;
+}
+
+/* 
 img {
   max-height: 100vh;
-}
+} */

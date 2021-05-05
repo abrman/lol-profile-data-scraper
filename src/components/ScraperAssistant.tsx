@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { scraper } from "../helpers/scraper";
+import { scraper } from "../tools/scraper";
 
 const ScraperAssistant = () => {
   const [content, setContent] = useState(<p>Loading...</p>);
