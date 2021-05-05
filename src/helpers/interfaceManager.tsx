@@ -1,16 +1,52 @@
 import React from "react";
 
+type Point = { x: number; y: number };
+
+type InterfaceData = {
+  [x: string]: {
+    edgeSearch: Point;
+    storePixelOffset: Point;
+    menuItemGaps: number;
+    profileIconOffset: Point;
+    collection: { x: number[]; y: number };
+  };
+};
+
+type searchPoint = [string, number, number, [number, number, number]];
+
 interface InterfaceManager {
-  [x: string]: any;
+  initiated: boolean;
+  pixelCanvas: CanvasRenderingContext2D;
+  edgeSearch: CanvasRenderingContext2D;
+  searchCoordinates: { [interfaceName: string]: searchPoint[] } | false;
+  videoElement: React.RefObject<HTMLVideoElement>;
+  currentUi: string;
+  collectionLabels: string[];
+  interfaceData: InterfaceData;
+  init(videoElement: React.RefObject<HTMLVideoElement>): void;
+  storePixel: Point | false;
+  findStorePixel: () => Point | false;
+  generateSearchCoordinates: () =>
+    | { [interfaceName: string]: searchPoint[] }
+    | false;
+  getPixelDataFromVideo: (
+    x: number,
+    y: number
+  ) => [number, number, number] | false;
+  currentInterface(
+    videoElement: React.RefObject<HTMLVideoElement>
+  ): string | false;
+  // [x: string]: any;
 }
 
 export const interfaceManager: InterfaceManager = {
   initiated: false,
-  pixelCanvas: document.createElement("canvas").getContext("2d"),
-  edgeSearch: document.createElement("canvas").getContext("2d"),
-  searchCoordinates: [],
+  pixelCanvas: document.createElement("canvas").getContext("2d")!,
+  edgeSearch: document.createElement("canvas").getContext("2d")!,
+  searchCoordinates: false,
   videoElement: React.createRef<HTMLVideoElement>(),
-  current_ui: "main_menu",
+  currentUi: "main_menu",
+  storePixel: { x: -1, y: -1 },
 
   collectionLabels: [
     "champions",
@@ -23,7 +59,7 @@ export const interfaceManager: InterfaceManager = {
     "wards",
     "chromas",
   ],
-  ui_data: {
+  interfaceData: {
     1920: {
       edgeSearch: { x: 1393, y: 32 },
       storePixelOffset: { x: -55, y: -30 },
@@ -75,10 +111,15 @@ export const interfaceManager: InterfaceManager = {
     this.edgeSearch.canvas.height = 1;
     this.storePixel = this.findStorePixel();
     this.searchCoordinates = this.generateSearchCoordinates();
+    if (!this.storePixel || !this.searchCoordinates) return;
     this.initiated = true;
   },
 
   getPixelDataFromVideo(x: number, y: number) {
+    if (this.videoElement.current == null) {
+      console.error("couldn't find videoElement on getPixelDataFromVideo()");
+      return false;
+    }
     this.pixelCanvas.drawImage(
       this.videoElement.current,
       x,
@@ -90,22 +131,29 @@ export const interfaceManager: InterfaceManager = {
       1,
       1
     );
-    return Array.from(this.pixelCanvas.getImageData(0, 0, 1, 1).data).splice(
-      0,
-      3
+    const pixelData = Array.from(
+      this.pixelCanvas.getImageData(0, 0, 1, 1).data
     );
+    return [pixelData[0], pixelData[1], pixelData[2]];
   },
 
   currentInterface(videoElement: React.RefObject<HTMLVideoElement>) {
     this.init(videoElement);
-    if (!this.initiated) return;
-    this.current_ui = "main_menu";
-    while (Object.keys(this.searchCoordinates).indexOf(this.current_ui) >= 0) {
-      //   console.log(this.searchCoordinates, this.current_ui);
+    if (!this.initiated) return false;
+    if (this.searchCoordinates === false) {
+      console.error("couldn't find searchCoordinates on currentInterface()");
+      return false;
+    }
 
-      const active_menu_items = this.searchCoordinates[this.current_ui].filter(
+    this.currentUi = "main_menu";
+    while (Object.keys(this.searchCoordinates).indexOf(this.currentUi) >= 0) {
+      //   console.log(this.searchCoordinates, this.currentUi);
+
+      const active_menu_items = this.searchCoordinates[this.currentUi].filter(
         ([name, x, y, expectedColor]: [string, number, number, number[]]) => {
-          const [r, g, b] = this.getPixelDataFromVideo(x, y);
+          const pixelData = this.getPixelDataFromVideo(x, y);
+          if (!pixelData) return false;
+          const [r, g, b] = pixelData;
           return (
             Math.abs(r - expectedColor[0]) +
               Math.abs(g - expectedColor[1]) +
@@ -116,29 +164,19 @@ export const interfaceManager: InterfaceManager = {
       );
       //   if (active_menu_items.length > 1)
       //     console.error(`More than one active menu item`, active_menu_items);
-      if (active_menu_items[0]) this.current_ui = active_menu_items[0][0];
-      else this.current_ui = false;
+      if (active_menu_items[0]) this.currentUi = active_menu_items[0][0];
+      else this.currentUi = "unknown";
     }
-    return this.current_ui;
-  },
-
-  findFirstBright(list: any[], valueTreshold = 60) {
-    for (let i = 0; i < list.length; i++) {
-      if (
-        list[i][1].filter((v: number, i: number) => i < 3 && v > valueTreshold)
-          .length > 0
-      ) {
-        return list[i][0];
-      }
-    }
-    return false;
+    return this.currentUi;
   },
 
   findStorePixel() {
+    if (this.videoElement.current == null) return false;
     this.edgeSearch.drawImage(
       this.videoElement.current,
-      this.ui_data[this.videoElement.current.videoWidth].edgeSearch.x - 100,
-      this.ui_data[this.videoElement.current.videoWidth].edgeSearch.y,
+      this.interfaceData[this.videoElement.current.videoWidth].edgeSearch.x -
+        100,
+      this.interfaceData[this.videoElement.current.videoWidth].edgeSearch.y,
       200,
       1,
       0,
@@ -150,55 +188,76 @@ export const interfaceManager: InterfaceManager = {
       .getImageData(0, 0, 200, 1)
       .data.filter((_: number, i: number) => i % 4 === 1);
     let i;
-    for (i = 0; i < greenChannel.length; i++)
-      if (greenChannel[i] > greenChannel[0] + 30) {
+    for (i = 1; i < greenChannel.length; i++)
+      if (
+        greenChannel[i] > greenChannel[0] + 30 &&
+        greenChannel[i] - 20 > greenChannel[i - 1] &&
+        greenChannel[i] - 20 > greenChannel[i + 1]
+      ) {
         break;
       }
 
     return {
       x:
-        this.ui_data[this.videoElement.current.videoWidth].edgeSearch.x -
+        this.interfaceData[this.videoElement.current.videoWidth].edgeSearch.x -
         100 +
         i +
-        this.ui_data[this.videoElement.current.videoWidth].storePixelOffset.x,
+        this.interfaceData[this.videoElement.current.videoWidth]
+          .storePixelOffset.x,
       y:
-        this.ui_data[this.videoElement.current.videoWidth].edgeSearch.y +
-        this.ui_data[this.videoElement.current.videoWidth].storePixelOffset.y,
+        this.interfaceData[this.videoElement.current.videoWidth].edgeSearch.y +
+        this.interfaceData[this.videoElement.current.videoWidth]
+          .storePixelOffset.y,
     };
   },
 
   generateSearchCoordinates() {
-    const yourStoreOpen =
-      this.getPixelDataFromVideo(
-        this.storePixel.x +
-          this.ui_data[this.videoElement.current.videoWidth].profileIconOffset
-            .x,
-        this.storePixel.y +
-          this.ui_data[this.videoElement.current.videoWidth].profileIconOffset.y
-      )[0] > 180;
+    if (!this.storePixel || !this.videoElement.current) {
+      return false;
+    }
 
+    const profilePixelData = this.getPixelDataFromVideo(
+      this.storePixel.x +
+        this.interfaceData[this.videoElement.current.videoWidth]
+          .profileIconOffset.x,
+      this.storePixel.y +
+        this.interfaceData[this.videoElement.current.videoWidth]
+          .profileIconOffset.y
+    );
+
+    if (!profilePixelData) return false;
+    const yourStoreOpen = profilePixelData[0] > 180;
+
+    /* Doing some fake checks here (as Point or as HTMLVideoElement)
+    as there isn't anything between the check earlier in the function
+    and the return value that could change the fact of that check. */
     return {
       main_menu: [
         "store",
-        yourStoreOpen ? "shop" : false,
+        yourStoreOpen ? "shop" : "false",
         "loot",
         "collection",
         "profile",
       ]
-        .filter((v) => v !== false)
+        .filter((v) => v !== "false")
         .map((menu_item, i) => [
           menu_item,
-          this.storePixel.x -
-            this.ui_data[this.videoElement.current.videoWidth].menuItemGaps * i,
-          this.storePixel.y,
+          (this.storePixel as Point).x -
+            this.interfaceData[
+              (this.videoElement.current as HTMLVideoElement).videoWidth
+            ].menuItemGaps *
+              i,
+          (this.storePixel as Point).y,
           [1, 10, 19],
         ]),
-      collection: this.ui_data[
+      collection: this.interfaceData[
         this.videoElement.current.videoWidth
       ].collection.x.map((x: number, i: number) => [
         this.collectionLabels[i],
         x,
-        this.ui_data[this.videoElement.current.videoWidth].collection.y,
+        this.interfaceData[
+          (this.videoElement.current as HTMLVideoElement).videoWidth
+        ].collection.y,
         [185, 185, 165],
       ]),
     };
