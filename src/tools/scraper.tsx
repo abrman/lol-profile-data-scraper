@@ -1,6 +1,7 @@
 import React from "react";
 import { interfaceManager } from "./interfaceManager";
 import { lootCaptureManager } from "./lootCaptureManager";
+import { lootScreenshotRecognitionTool } from "./lootScreenshotRecognitionTool";
 import { mediaStreamManager } from "./mediaStreamManager";
 
 interface Scraper {
@@ -23,6 +24,9 @@ export const scraper: Scraper = {
     );
 
     if (scraper.currentView === "loot") lootCaptureManager.loop();
+
+    if (lootCaptureManager.finalScreenshotComplete)
+      lootScreenshotRecognitionTool.recognize(lootCaptureManager.lootCanvas);
 
     scraper.updateAssistant(<>Current view: {scraper.currentView}</>);
     requestAnimationFrame(scraper.loop);
