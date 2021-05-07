@@ -189,7 +189,11 @@ export const lootCaptureManager: LootCaptureManager = {
         this.screenshotAreaData[scraper.videoWidth].h
       ).data;
 
-      diagonalSearch: for (
+      // Search algorithm visualization
+      // https://flems.io/#0=N4IgtglgJlA2CmIBcBWAnAOjQJgDQgDMIEBnZAbVADsBDMRJEDACwBcxYR8BjAeytbwByEAB4oEAG4ACbrBokSAXgA6IAO4AnGgAcd8TWoB8ogPQTJRriBLwE3VhH5lGABiTYA7CAC+uanQMTABWZDz8gsKMfFQkrNLq0krSAIwAbK4A3CpUMXHSzEnSABxZOXnx3IXJKdlU5c7xWrr6mkVQvNwArvQCGACOXQYAngDKdvAOvJoAFGoYzXoGagCUdYutGHHDCCzwEADmbEXMAFTYANQA5DoAHlfr2kuaW6w78AvQrNUJ59d3DxyOXIGFBAEFNNphjN1KdmCsALoYAjTACiNCqMwA+kojMActJZI1ZHZYO1Oj0hKwMNxNPAaIJUQheqwZlcLFc1gSSbBYDT5IoADIQOIYGgwNncUmc7kbAxipZUKAAYWYxCgMylvJWOR8OvqVAQ8XI3Fwt1wwwRRXIrlwttcCLqDVi8VgvF4OiKWKSRmk+IN3Iq0ggRVupyqF24FxmM1uF2GK1OsKqKwApDC4eH4bKnpsquq6VRyBAkdtdgAjDEAawOml4XSVRTUAGJXG21NzAxcLnVCRACNJNdIjMkU8BZEostI4xdpD5uf3B7dh8l1Ctx7dJ5lpMNu3OFwOZsMVwV1zvJ-uqITbKwACoQej11luj24aSufXzg0vnQzNbWPgwB0YgDBEStyzsaxbHsRxnBETwkFcXx-BAWh6BEGlFAAiIqTA3goGPf1CWYfYjlYJBUjbSRmF7aQJBIHR5GGCiCAQW5aOCLo4n7YYAFoYkiciSQEAxaJoWBDioXiIEEMASAoqURM0OovxyBZcwMP1uSfCSqHgCiUDuaQSF4CSoGkVs2xUoEqBpUktKvaRWN4BkKIQAhWFo9QvmYCjsDuWiSMONg-IC7lK24Gs6wbKAKLpKAVKgiYHCcWIRBSAAWJAUhSXwER8IA
+      // 640 = 160(width) * 4(channel count)
+      // 51200 = 160(width) * 80(height) * 4(channel count)
+      search: for (
         let i = this.screenshotAreaData[scraper.videoWidth].h - 80;
         i >= 0;
         i--
@@ -205,7 +209,7 @@ export const lootCaptureManager: LootCaptureManager = {
                 (search < 50 && match < 50)
               ) {
               } else {
-                continue diagonalSearch;
+                continue search;
               }
             }
           }
