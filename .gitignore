@@ -11,6 +11,7 @@
 # production
 /build
 
+#training_data
 /model_training/training_data
 
 # misc
