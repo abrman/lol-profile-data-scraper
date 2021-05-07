@@ -15,7 +15,7 @@
 /model_training/training_data
 
 #vscode settings
-.vscode
+/.vscode
 
 # misc
 .DS_Store
