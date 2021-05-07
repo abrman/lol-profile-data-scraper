@@ -4,6 +4,7 @@ import html
 import json
 from slpp import slpp as lua
 # SLPP to convert to parse lua object from wikipedia
+# pip install git+https://github.com/SirAnthony/slpp
 # https://github.com/SirAnthony/slpp
 # https://stackoverflow.com/questions/39838489/converting-lua-table-to-a-python-dictionary
 # https://stackoverflow.com/questions/31235376/pycharm-doesnt-recognise-installed-module#:~:text=Solution%3A%20just%20install%20the%20package,you%20will%20see%20it%20pycharm%20.&text=After%20pip%20installing%20everything%20I%20needed.
