@@ -1,5 +1,7 @@
 import { lootCaptureManager } from "./lootCaptureManager";
 import { scraper } from "./scraper";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 
 interface LootScreenshotRecognitionTool {
   [x: string]: any;
@@ -18,37 +20,212 @@ export const lootScreenshotRecognitionTool: LootScreenshotRecognitionTool = {
     this.finished = true;
   },
 
+  // Lightness formula below was used to generate grayscale testing data
+  /*
+    let imageData = canvas.getContext("2d")?.getImageData(0, 0, size, size);
+      let pixels = imageData?.data;
+      if (typeof pixels !== "undefined") {
+        for (var j = 0; j < pixels.length; j += 4) {
+          let lightness =
+            pixels[j] * 0.299 + pixels[j + 1] * 0.587 + pixels[j + 2] * 0.114;
+
+          pixels[j] = lightness;
+          pixels[j + 1] = lightness;
+          pixels[j + 2] = lightness;
+        }
+      }
+      if (typeof imageData !== "undefined")
+        canvas.getContext("2d")?.putImageData(imageData, 0, 0);
+
+      var image = canvas.toDataURL();
+  */
+
+  // Delete from here when model training pipeline is complete
+  filenames: [
+    "champion_capsule",
+    "eternals_series_1_capsule",
+    "hextech_chest",
+    "hextech_mystery_emote",
+    "honor_level_4_capsule",
+    "masterwork_chest",
+    "gemstone",
+    "honor_5_token",
+    "key_fragment",
+    "prestige_point",
+    "space_groove_2021_token",
+    "mastery_7_token_202000",
+    "mastery_7_token_222000",
+    "mastery_7_token_111000",
+    "mastery_7_token_101000",
+    "266000",
+    "84000",
+    "12000",
+    "32000",
+    "34000",
+    "1000",
+    "22000",
+    "136000",
+    "268000",
+    "432000",
+    "53000",
+    "63000",
+    "164000",
+    "31000",
+    "42000",
+    "122000",
+    "131000",
+    "119000",
+    "9000",
+    "114000",
+    "3000",
+    "41000",
+    "86000",
+    "79000",
+    "104000",
+    "120000",
+    "74000",
+    "39000",
+    "40000",
+    "59000",
+    "24000",
+    "429000",
+    "43000",
+    "30000",
+    "38000",
+    "55000",
+    "10000",
+    "141000",
+    "121000",
+    "203000",
+    "240000",
+    "7000",
+    "876000",
+    "127000",
+    "236000",
+    "117000",
+    "99000",
+    "54000",
+    "11000",
+    "21000",
+    "82000",
+    "75000",
+    "518000",
+    "76000",
+    "56000",
+    "20000",
+    "2000",
+    "516000",
+    "78000",
+    "555000",
+    "246000",
+    "133000",
+    "497000",
+    "33000",
+    "421000",
+    "107000",
+    "92000",
+    "68000",
+    "13000",
+    "360000",
+    "113000",
+    "235000",
+    "98000",
+    "102000",
+    "27000",
+    "14000",
+    "15000",
+    "72000",
+    "37000",
+    "16000",
+    "50000",
+    "517000",
+    "223000",
+    "163000",
+    "44000",
+    "17000",
+    "18000",
+    "48000",
+    "23000",
+    "4000",
+    "29000",
+    "77000",
+    "6000",
+    "45000",
+    "161000",
+    "254000",
+    "112000",
+    "8000",
+    "106000",
+    "19000",
+    "498000",
+    "5000",
+    "83000",
+    "350000",
+    "154000",
+    "238000",
+    "26000",
+    "142000",
+  ],
+
+  zip: new JSZip(),
+
   downloadRect(ctx: CanvasRenderingContext2D, rects: any, i: number = 0) {
-    if (rects.length == 0) return;
+    if (rects.length === 0) return;
     const item = rects.shift();
-    var canvas = document.createElement("canvas");
-    canvas.width = item.w;
-    canvas.height = item.h;
-    canvas
-      .getContext("2d")
-      ?.drawImage(
-        ctx.canvas,
-        item.x,
-        item.y,
-        item.w,
-        item.h,
-        0,
-        0,
-        item.w,
-        item.h
+
+    [16, 24, 32, 48, 64].forEach((size) => {
+      var canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      canvas
+        .getContext("2d")
+        ?.drawImage(
+          ctx.canvas,
+          item.x,
+          item.y,
+          item.w,
+          item.h,
+          0,
+          0,
+          size,
+          size
+        );
+      let imageData = canvas.getContext("2d")?.getImageData(0, 0, size, size);
+      let pixels = imageData?.data;
+      if (typeof pixels !== "undefined") {
+        for (var j = 0; j < pixels.length; j += 4) {
+          let lightness =
+            pixels[j] * 0.299 + pixels[j + 1] * 0.587 + pixels[j + 2] * 0.114;
+
+          pixels[j] = lightness;
+          pixels[j + 1] = lightness;
+          pixels[j + 2] = lightness;
+        }
+      }
+      if (typeof imageData !== "undefined")
+        canvas.getContext("2d")?.putImageData(imageData, 0, 0);
+
+      var image = canvas.toDataURL();
+      this.zip.file(
+        `${size}:1920_${this.filenames[i]}.png`,
+        image.split(";base64,")[1],
+        {
+          base64: true,
+        }
       );
-    var image = canvas.toDataURL();
-
-    var aDownloadLink = document.createElement("a");
-    aDownloadLink.download = `${item.cat}_loot_${i}.png`;
-    aDownloadLink.href = image;
-    aDownloadLink.click();
-
-    const self = this;
-    requestAnimationFrame(() => {
-      self.downloadRect(ctx, rects, i + 1);
+      console.log(`Saving ${this.filenames[i]}`);
     });
+    if (typeof this.filenames[i + 1] == "undefined") {
+      console.log("Generating zip");
+      this.zip.generateAsync({ type: "blob" }).then(function (content: any) {
+        saveAs(content, scraper.videoWidth.toString() + ".zip");
+      });
+    } else {
+      const self = this;
+      self.downloadRect(ctx, rects, i + 1);
+    }
   },
+  // Delete to here when model training pipeline is complete
 
   // Finds horizontal lines seperating sections in loot screenshots (Material, Champions, Skins, etc.)
   findLines(ctx: CanvasRenderingContext2D) {
