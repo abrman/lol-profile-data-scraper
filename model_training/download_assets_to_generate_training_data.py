@@ -1,16 +1,21 @@
 import urllib.request, json, html, re, os
 
+champions_url = "https://raw.communitydragon.org/pbe/plugins/rcp-be-lol-game-data/global/default/v1/champion-tiles/"
+border_images_url = "https://raw.communitydragon.org/pbe/plugins/rcp-fe-lol-loot/global/default/assets/border_images/"
+# My TFT loot is empty, horrible starting point. Leaving this here for anyone who'd want to pick it up from here :)
+companions_url = "https://raw.communitydragon.org/pbe/game/assets/loot/companions/"
+
+assets_folder = "model_training/assets/"
+
+
+# Make sure working directory is project root
+if os.getcwd().rsplit('\\',1)[1]=="model_training":
+    os.chdir( os.getcwd().rsplit('\\',1)[0] )
+    
 opener = urllib.request.build_opener()
 opener.addheaders = [('User-agent', 'Mozilla/5.0')]
 urllib.request.install_opener(opener)
 
-champions_url = "https://raw.communitydragon.org/pbe/plugins/rcp-be-lol-game-data/global/default/v1/champion-tiles/"
-border_images_url = "https://raw.communitydragon.org/pbe/plugins/rcp-fe-lol-loot/global/default/assets/border_images/"
-
-# My TFT loot is empty, horrible starting point. Leaving this here for anyone who'd want to pick it up from here :)
-companions_url = "https://raw.communitydragon.org/pbe/game/assets/loot/companions/"
-
-training_data_folder = "model_training/training_data/"
 
 def find_all_images_in_directory( url ):
     images = find_all_images_in_directory_recursive( url )
@@ -35,7 +40,7 @@ def download_border_images():
     images = find_all_images_in_directory(border_images_url)
     for image in images:
         source = border_images_url + image
-        destination = training_data_folder + "border_images/" + image
+        destination = assets_folder + "border_images/" + image
         if not os.path.exists(destination.rsplit('/',1)[0]):
             os.makedirs(destination.rsplit('/',1)[0])
         urllib.request.urlretrieve(source, destination)
@@ -46,7 +51,7 @@ def download_champions_and_skin():
         folder = "champions/" if image.endswith("000.jpg") else "skins/"        
         source = champions_url + image
         # training_data/(champions|skins)/A+BBB/default.jpg when A+ = champion_id & BBB = skin_id
-        destination = training_data_folder + folder + image.split(".")[0].split("/")[1] + "/default.jpg"
+        destination = assets_folder + folder + image.split(".")[0].split("/")[1] + "/default.jpg"
         if not os.path.exists(destination.rsplit('/',1)[0]):
             os.makedirs(destination.rsplit('/',1)[0])
         urllib.request.urlretrieve(source, destination)
