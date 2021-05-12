@@ -2,7 +2,7 @@ import urllib.request, json
 import os
 
 # CONFIG
-download_folder_name = "training_data"
+assets_folder = "assets"
 skip_champions_under_id = 0  # Used for incomplete champion downloads (lets you start at specific ID)
 download_champion_icons = True  # Download champions icons
 download_loot_icons = False  # Download other loot icons
@@ -26,12 +26,12 @@ with urllib.request.urlopen(champion_summary_json_url) as url:
 # {-1: 'None', 1: 'Annie', 2: 'Olaf', 3: 'Galio', 4: 'TwistedFate', 5: 'XinZhao',...}
 
 if download_champion_icons:
-    if not os.path.exists(download_folder_name):
-        os.makedirs(download_folder_name)
-    if not os.path.exists(download_folder_name+"/skins"):
-        os.makedirs(download_folder_name+"/skins")
-    if not os.path.exists(download_folder_name+"/champions"):
-        os.makedirs(download_folder_name+"/champions")
+    if not os.path.exists(assets_folder):
+        os.makedirs(assets_folder)
+    if not os.path.exists(assets_folder+"/skins"):
+        os.makedirs(assets_folder+"/skins")
+    if not os.path.exists(assets_folder+"/champions"):
+        os.makedirs(assets_folder+"/champions")
 
     for champion_id in champion_key_name_dictionary.keys():
         if champion_id <= skip_champions_under_id: continue
@@ -41,9 +41,9 @@ if download_champion_icons:
             url = community_dragon + "rcp-be-lol-game-data/global/default/v1/champion-tiles/" + \
                   str(champion_id) + "/" + str(champion_id) + f'{skin_id:03}' + ".jpg"
             try:
-                target_folder = download_folder_name + "/champions/" + champion_key_name_dictionary[champion_id] + "_" + str(champion_id)
+                target_folder = assets_folder + "/champions/" + champion_key_name_dictionary[champion_id] + "_" + str(champion_id)
                 if skin_id > 0:
-                    target_folder = download_folder_name + "/skins/" + champion_key_name_dictionary[champion_id] + "_" + str(champion_id)
+                    target_folder = assets_folder + "/skins/" + champion_key_name_dictionary[champion_id] + "_" + str(champion_id)
 
                 if not os.path.exists(target_folder):
                     os.makedirs(target_folder)
