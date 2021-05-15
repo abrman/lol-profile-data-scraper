@@ -2,6 +2,10 @@ import urllib.request, json, html, re, os
 
 champions_url = "https://raw.communitydragon.org/pbe/plugins/rcp-be-lol-game-data/global/default/v1/champion-tiles/"
 border_images_url = "https://raw.communitydragon.org/pbe/plugins/rcp-fe-lol-loot/global/default/assets/border_images/"
+rarity_icons_url = "https://raw.communitydragon.org/pbe/plugins/rcp-fe-lol-loot/global/default/assets/rarity_icons/"
+tag_icons_url = "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-loot/global/default/assets/tag_icons/"
+ward_skins_wiki_url = "https://leagueoflegends.fandom.com/wiki/Ward_skins"
+
 # My TFT loot is empty, horrible starting point. Leaving this here for anyone who'd want to pick it up from here :)
 companions_url = "https://raw.communitydragon.org/pbe/game/assets/loot/companions/"
 
@@ -44,6 +48,24 @@ def download_border_images():
         if not os.path.exists(destination.rsplit('/',1)[0]):
             os.makedirs(destination.rsplit('/',1)[0])
         urllib.request.urlretrieve(source, destination)
+        
+def download_rarity_icons():
+    images = find_all_images_in_directory(rarity_icons_url)
+    for image in images:
+        source = rarity_icons_url + image
+        destination = assets_folder + "rarity_icons/" + image
+        if not os.path.exists(destination.rsplit('/',1)[0]):
+            os.makedirs(destination.rsplit('/',1)[0])
+        urllib.request.urlretrieve(source, destination)
+        
+def download_tag_icons():
+    images = find_all_images_in_directory(tag_icons_url)
+    for image in images:
+        source = tag_icons_url + image
+        destination = assets_folder + "tag_icons/" + image
+        if not os.path.exists(destination.rsplit('/',1)[0]):
+            os.makedirs(destination.rsplit('/',1)[0])
+        urllib.request.urlretrieve(source, destination)
 
 def download_champions_and_skin():
     images = find_all_images_in_directory(champions_url)
@@ -57,10 +79,28 @@ def download_champions_and_skin():
         urllib.request.urlretrieve(source, destination)
         print("Downloaded: "+str(image.split(".")[0].split("/")[1]))
 
+def download_ward_skins():
+    export = {}
+    with urllib.request.urlopen(ward_skins_wiki_url) as url:
+        wards = re.findall(
+            '(?<=_Ward.png" data-src=")([^"]+\.png)',
+            html.unescape(url.read().decode('utf-8'))
+        )
+        for source in wards:
+            ward_name = source.rsplit("/",1)[1]
+            destination = assets_folder + "ward_icons/" + ward_name
+            if not os.path.exists(destination.rsplit('/',1)[0]):
+                os.makedirs(destination.rsplit('/',1)[0])
+            urllib.request.urlretrieve(source, destination)
 
 
 
 
-# print( find_all_images_in_directory(border_images_url) )
-download_champions_and_skin()
 
+
+
+# download_champions_and_skin()
+# download_border_images()
+# download_rarity_icons()
+# download_tag_icons()
+download_ward_skins()
