@@ -14,10 +14,16 @@ from slpp import slpp as lua
 skin_data_url = "https://leagueoflegends.fandom.com/wiki/Module:SkinData/data"
 champions_data_url = "https://leagueoflegends.fandom.com/wiki/Module:ChampionData/data"
 
+ward_skin_data_url = "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/ward-skins.json"
+
 # Make sure working directory is project root
 if os.getcwd().rsplit('\\',1)[1]=="model_training":
     os.chdir( os.getcwd().rsplit('\\',1)[0] )
-    
+      
+opener = urllib.request.build_opener()
+opener.addheaders = [('User-agent', 'Mozilla/5.0')]
+urllib.request.install_opener(opener)
+
 export = {}
 with urllib.request.urlopen(skin_data_url) as url:
     data = re.search(
@@ -45,36 +51,18 @@ with urllib.request.urlopen(skin_data_url) as url:
 
 
             export[key] = (full_skin_name, value, legacy)
-            # if data[champion]["id"] != "None":
-            #     skin_prices[key] = {
-            #         "champion_name": champion,
-            #         "champion_id": data[champion]["id"],
-            #         "skin_name": skin_name,
-            #         "skin_id": skin["id"],
-            #         "cost": skin["cost"],
-            #         "release": skin["release"],
-            #         "availability": skin["availability"]
-            #     }
 
-# champion_prices = {}
-# with urllib.request.urlopen(champions_data_url) as url:
-#     data = re.search(
-#         '(?<=-- \<pre\>\nreturn )([^$]*)(?=-- \<\/pre\>)',
-#         html.unescape(url.read().decode('utf-8'))
-#     ).group(0)
-#     data = lua.decode(data)
-#     for champion in data.keys():
-#         key = str(data[champion]["id"])
-#         champion_prices[key] = {
-#             "champion_name": champion,
-#             "champion_id": data[champion]["id"],
-#             "be_cost": skin["cost"]
-#         }
+with urllib.request.urlopen(ward_skin_data_url) as url:
+    data = json.loads(url.read().decode())
+    for i in range(len(data)):
+        ward = data[i]
+        isLegacy = 1 if ward["isLegacy"] else 0
+        export["w"+str(i)] = (ward["name"], 640, isLegacy)
 
 print(json.dumps(export))
 
 if not os.path.exists('shared'):
     os.makedirs('shared')
 
-with open(os.path.join('public','loot_id_and_prices.json'), 'w') as json_save_file:
+with open(os.path.join('public','lookup_table.json'), 'w') as json_save_file:
     json.dump(export, json_save_file)
