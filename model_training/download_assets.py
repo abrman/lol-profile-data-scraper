@@ -61,3 +61,10 @@ queue = (
 for item in queue:
     print("Downloading into "+os.path.join(assets_folder, item[0]))
     download_from_url_and_save_to_directory(item[1], os.path.join(assets_folder, item[0]))  
+
+
+# Odd one out - ward skin download to border_images/
+urllib.request.urlretrieve(
+    "https://raw.communitydragon.org/pbe/plugins/rcp-fe-lol-loot/global/default/assets/loot_item_icons/wardskin_background.png", 
+    os.path.join(assets_folder, "border_images", "wardskin_background.png")
+)
