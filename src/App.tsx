@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./App.css";
 import loot from "./assets/loot-tab.jpg";
 import { scraper } from "./tools/scraper";
@@ -10,6 +10,10 @@ function App() {
   scraper.videoElement = React.useRef<HTMLVideoElement>(null);
 
   const [view, setView] = useState("landing");
+
+  useEffect(() => {
+    scraper.init();
+  }, []);
 
   const tableData = [
     ["Aatrox", 1, 2880, 4800],

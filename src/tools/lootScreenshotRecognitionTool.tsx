@@ -2,6 +2,16 @@ import { lootCaptureManager } from "./lootCaptureManager";
 import { scraper } from "./scraper";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
+import * as tf from "@tensorflow/tfjs";
+import { type } from "node:os";
+
+type Rect = {
+  cat: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+};
 
 interface LootScreenshotRecognitionTool {
   [x: string]: any;
@@ -15,217 +25,278 @@ export const lootScreenshotRecognitionTool: LootScreenshotRecognitionTool = {
     const lines = this.findLines(ctx);
     const lootRects = this.computeLootCropRects(ctx, lines);
     console.log(lootRects);
-    this.downloadRect(ctx, lootRects, 0);
+    this.classifyRects(ctx, lootRects);
 
     this.finished = true;
   },
 
-  // Lightness formula below was used to generate grayscale testing data
-  /*
-    let imageData = canvas.getContext("2d")?.getImageData(0, 0, size, size);
-      let pixels = imageData?.data;
-      if (typeof pixels !== "undefined") {
-        for (var j = 0; j < pixels.length; j += 4) {
-          let lightness =
-            pixels[j] * 0.299 + pixels[j + 1] * 0.587 + pixels[j + 2] * 0.114;
+  classifyRects(ctx: CanvasRenderingContext2D, lootRects: any) {
+    // Create (1,28,28) tensors representing the chamion icon
+    const predictions = lootRects.map((rect: Rect) =>
+      this.getChampionOrSkinPredictionFromRect(ctx, rect)
+    );
 
-          pixels[j] = lightness;
-          pixels[j + 1] = lightness;
-          pixels[j + 2] = lightness;
-        }
-      }
-      if (typeof imageData !== "undefined")
-        canvas.getContext("2d")?.putImageData(imageData, 0, 0);
+    const canvas = document.createElement("canvas");
+    const ctx2d = canvas.getContext("2d");
+    canvas.width = ctx.canvas.width;
+    canvas.height = ctx.canvas.height;
+    ctx2d?.putImageData(
+      ctx.getImageData(0, 0, canvas.width, canvas.height),
+      0,
+      0
+    );
+    const correctNumbers = [
+      4, -1, -1, 3, -1, -1, -1, 9, -1, 23, 0, 3, -1, 3, 3, 2, 2, 2, 2, 3, 2, 2,
+      3, 3, -1, -1, -1, -1, -1, 3, -1, 2, 2, 2, 2, -1, 2, 2, 2, -1, -1, 3, -1,
+      2, 2, -1, -1, 2, -1, 2, 2, 2, 2, 2, -1, -1, 2, -1, -1, 2, 2, 2, 3, 2, 3,
+      -1, 2, -1, 2, -1, 2, 2, -1, 2, 2, -1, 2, 2, -1, -1, -1, -1, -1, 2, -1, -1,
+      -1, 2, 2, 2, 2, 2, -1, 2, 2, -1, 2, 2, 3, 2, 2, 2, 2, 3, 2, 2, 2, 3, 2, 2,
+      -1, 2, 2, 2, 2, 2, 3, -1, 2, -1, 2, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+      -1, -1, -1, -1, -1, -1, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, 2, -1, -1,
+      -1, -1, -1, -1, -1, -1, -1, -1, -1, 2, -1, -1, 2, -1, -1, -1, -1, -1, -1,
+      -1, -1, -1, -1,
+    ];
 
-      var image = canvas.toDataURL();
-  */
+    lootRects.forEach((rect: any, i: number) => {
+      this.getLootCountFromRect(ctx, rect, predictions[i], correctNumbers[i]);
 
-  // Delete from here when model training pipeline is complete
-  filenames: [
-    "champion_capsule",
-    "eternals_series_1_capsule",
-    "hextech_chest",
-    "hextech_mystery_emote",
-    "honor_level_4_capsule",
-    "masterwork_chest",
-    "gemstone",
-    "honor_5_token",
-    "key_fragment",
-    "prestige_point",
-    "space_groove_2021_token",
-    "mastery_7_token_202000",
-    "mastery_7_token_222000",
-    "mastery_7_token_111000",
-    "mastery_7_token_101000",
-    "266000",
-    "84000",
-    "12000",
-    "32000",
-    "34000",
-    "1000",
-    "22000",
-    "136000",
-    "268000",
-    "432000",
-    "53000",
-    "63000",
-    "164000",
-    "31000",
-    "42000",
-    "122000",
-    "131000",
-    "119000",
-    "9000",
-    "114000",
-    "3000",
-    "41000",
-    "86000",
-    "79000",
-    "104000",
-    "120000",
-    "74000",
-    "39000",
-    "40000",
-    "59000",
-    "24000",
-    "429000",
-    "43000",
-    "30000",
-    "38000",
-    "55000",
-    "10000",
-    "141000",
-    "121000",
-    "203000",
-    "240000",
-    "7000",
-    "876000",
-    "127000",
-    "236000",
-    "117000",
-    "99000",
-    "54000",
-    "11000",
-    "21000",
-    "82000",
-    "75000",
-    "518000",
-    "76000",
-    "56000",
-    "20000",
-    "2000",
-    "516000",
-    "78000",
-    "555000",
-    "246000",
-    "133000",
-    "497000",
-    "33000",
-    "421000",
-    "107000",
-    "92000",
-    "68000",
-    "13000",
-    "360000",
-    "113000",
-    "235000",
-    "98000",
-    "102000",
-    "27000",
-    "14000",
-    "15000",
-    "72000",
-    "37000",
-    "16000",
-    "50000",
-    "517000",
-    "223000",
-    "163000",
-    "44000",
-    "17000",
-    "18000",
-    "48000",
-    "23000",
-    "4000",
-    "29000",
-    "77000",
-    "6000",
-    "45000",
-    "161000",
-    "254000",
-    "112000",
-    "8000",
-    "106000",
-    "19000",
-    "498000",
-    "5000",
-    "83000",
-    "350000",
-    "154000",
-    "238000",
-    "26000",
-    "142000",
-  ],
+      if (ctx2d == null) return;
+      ctx2d.beginPath();
+      ctx2d.lineWidth = 1;
+      ctx2d.strokeStyle = "red";
+      ctx2d.rect(rect.x, rect.y, rect.w, rect.h);
+      ctx2d.stroke();
+      ctx2d.font = "10px Arial";
+      ctx2d.fillStyle = "red";
+      ctx2d.fillText(predictions[i], rect.x + 3, rect.y + 15);
+    });
 
-  zip: new JSZip(),
+    if (typeof lootCaptureManager.setImg2 === "function")
+      lootCaptureManager.setImg2(canvas.toDataURL());
+  },
 
-  downloadRect(ctx: CanvasRenderingContext2D, rects: any, i: number = 0) {
-    if (rects.length === 0) return;
-    const item = rects.shift();
+  getLootCountFromRect(
+    ctx: CanvasRenderingContext2D,
+    rect: Rect,
+    prediction: string,
+    correctNumber: number
+  ) {
+    const offsets = {
+      "1024": {
+        w: 20,
+        h: 9,
+        xPad: 4,
+        yPad: 5,
+        minNumberHeight: 7,
+        maxNumberHeight: 8,
+      },
+      "1280": {
+        w: 25,
+        h: 9,
+        xPad: 4,
+        yPad: 7,
+        minNumberHeight: 8,
+        maxNumberHeight: 9,
+      },
+      "1600": {
+        w: 30,
+        h: 13,
+        xPad: 6,
+        yPad: 7,
+        minNumberHeight: 10,
+        maxNumberHeight: 13,
+      },
+      "1920": {
+        w: 35,
+        h: 16,
+        xPad: 8,
+        yPad: 9,
+        minNumberHeight: 11,
+        maxNumberHeight: 14,
+      },
+    };
 
-    [16, 24, 32, 48, 64].forEach((size) => {
-      var canvas = document.createElement("canvas");
-      canvas.width = size;
-      canvas.height = size;
+    const offset =
+      offsets[
+        scraper.videoWidth.toString() as "1024" | "1280" | "1600" | "1920"
+      ] || offsets["1024"];
+    //Find individual number rects
+    const canvas = document.createElement("canvas");
+    canvas.width = offset.w;
+    canvas.height = offset.h;
+
+    let x = Math.round(rect.x + rect.w - offset.w - offset.xPad);
+    let y = Math.round(rect.y + rect.h - offset.h - offset.yPad);
+    let [w, h] = [offset.w, offset.h];
+
+    canvas.getContext("2d")?.drawImage(ctx.canvas, x, y, w, h, 0, 0, w, h);
+
+    let picture: number[] | number[][] = Array.from(
       canvas
         .getContext("2d")
-        ?.drawImage(
-          ctx.canvas,
-          item.x,
-          item.y,
-          item.w,
-          item.h,
-          0,
-          0,
-          size,
-          size
-        );
-      let imageData = canvas.getContext("2d")?.getImageData(0, 0, size, size);
-      let pixels = imageData?.data;
-      if (typeof pixels !== "undefined") {
-        for (var j = 0; j < pixels.length; j += 4) {
-          let lightness =
-            pixels[j] * 0.299 + pixels[j + 1] * 0.587 + pixels[j + 2] * 0.114;
+        ?.getImageData(0, 0, offset.w, offset.h)
+        .data.map((v, i, a) =>
+          i % 4 !== 0 ? 0 : v > 128 && (v > a[i + 2] || 0) ? 1 : 0
+        )
+        .filter((_, i) => i % 4 == 0) as Uint8ClampedArray
+    );
 
-          pixels[j] = lightness;
-          pixels[j + 1] = lightness;
-          pixels[j + 2] = lightness;
+    if (typeof picture !== "undefined")
+      picture = [...Array(Math.ceil(picture.length / offset.w))].map((_) =>
+        (picture as number[]).splice(0, offset.w)
+      );
+
+    while (picture[0] && picture[0].join("").match(/0{5}$/)) {
+      picture.shift();
+      y++;
+      h--;
+    }
+
+    while (picture[0] && picture[picture.length - 1].join("").match(/0{5}$/)) {
+      picture.pop();
+      h--;
+    }
+
+    canvas
+      .getContext("2d")
+      ?.drawImage(
+        ctx.canvas,
+        Math.round(rect.x + rect.w - 15 - offset.xPad),
+        Math.round(rect.y + rect.h - offset.h - offset.yPad - 2),
+        15,
+        1,
+        0,
+        0,
+        15,
+        1
+      );
+
+    const rowAboveLineDark =
+      Math.max(
+        ...Array.from(
+          canvas
+            .getContext("2d")
+            ?.getImageData(0, 0, 15, 1)
+            .data.map((v, i, a) =>
+              i % 4 !== 0 ? 0 : v > 128 && (v > a[i + 2] || 0) ? 1 : 0
+            )
+            .filter((_, i) => i % 4 == 0) as Uint8ClampedArray
+        )
+      ) == 0;
+
+    const isNumber =
+      picture.length <= offset.maxNumberHeight &&
+      picture.length >= offset.minNumberHeight &&
+      rowAboveLineDark;
+
+    if (isNumber && correctNumber == -1) alert(prediction + " problem");
+    console.log(correctNumber, prediction);
+    console.log(
+      "%c" +
+        picture
+          ?.map((l) => l.join(""))
+          .join("\n")
+          .replace(/0/g, ".")
+          .replace(/1/g, "#"),
+      isNumber ? "color:green" : "color: red"
+    );
+
+    if (isNumber) {
+      const freeColumns = [...Array(picture[0].length)].map((_, i) =>
+        [...Array(picture.length)]
+          .map((_, j) => (picture as number[][])[j][i])
+          .reduce((a, b) => a + b, 0)
+      );
+      let numberColumnsRanges = [];
+      let start: number | false = false;
+      for (let i = freeColumns.length - 1; i >= 0; i--) {
+        if (freeColumns[i] > 0 && start === false) start = i;
+        else if (freeColumns[i] === 0 && start !== false) {
+          numberColumnsRanges.push([i + 1, start]);
+          start = false;
         }
       }
-      if (typeof imageData !== "undefined")
-        canvas.getContext("2d")?.putImageData(imageData, 0, 0);
+      canvas.width = 7;
+      canvas.height = 7;
+      numberColumnsRanges = numberColumnsRanges
+        .reverse()
+        .filter((v) => v[1] - v[0] > 3);
+      numberColumnsRanges.forEach((range: number[]) => {
+        console.log(h);
+        canvas
+          .getContext("2d")
+          ?.drawImage(
+            ctx.canvas,
+            x + range[0],
+            y,
+            range[1] - range[0] + 1,
+            h,
+            0,
+            0,
+            7,
+            7
+          );
+        let number: number[] | number[][] = Array.from(
+          canvas
+            .getContext("2d")
+            ?.getImageData(0, 0, 7, 7)
+            .data.filter((_, i) => i % 4 == 0)
+            .map((v) => (v > 100 ? 1 : 0)) as Uint8ClampedArray
+        );
 
-      var image = canvas.toDataURL();
-      this.zip.file(
-        `${size}:1920_${this.filenames[i]}.png`,
-        image.split(";base64,")[1],
-        {
-          base64: true,
-        }
-      );
-      console.log(`Saving ${this.filenames[i]}`);
-    });
-    if (typeof this.filenames[i + 1] == "undefined") {
-      console.log("Generating zip");
-      this.zip.generateAsync({ type: "blob" }).then(function (content: any) {
-        saveAs(content, scraper.videoWidth.toString() + ".zip");
+        console.log(
+          "%c  ",
+          `font-size:70px;color:red;background-size:contain;background-repeat:no-repeat;background-image:url('${canvas.toDataURL()}');`
+        );
+
+        number = [...Array(Math.ceil(number.length / 7))].map((_) =>
+          (number as number[]).splice(0, 7)
+        );
+        console.log(number);
+        console.log(
+          number
+            ?.map((l) => l.join(""))
+            .join("\n")
+            .replace(/0/g, ".")
+            .replace(/1/g, "#")
+        );
+
+        if (typeof lootCaptureManager.setImg3 === "function")
+          lootCaptureManager.setImg3(canvas.toDataURL());
       });
-    } else {
-      const self = this;
-      self.downloadRect(ctx, rects, i + 1);
     }
   },
-  // Delete to here when model training pipeline is complete
+
+  getChampionOrSkinPredictionFromRect(
+    ctx: CanvasRenderingContext2D,
+    rect: Rect
+  ) {
+    const canvas = document.createElement("canvas");
+    canvas.width = 28;
+    canvas.height = 28;
+    const lightValues = [];
+    canvas
+      .getContext("2d")
+      ?.drawImage(ctx.canvas, rect.x, rect.y, rect.w, rect.h, 0, 0, 28, 28);
+    let imageData = canvas.getContext("2d")?.getImageData(0, 0, 28, 28);
+    let pixels = imageData?.data;
+    if (typeof pixels !== "undefined") {
+      for (var j = 0; j < pixels.length; j += 4) {
+        let lightness =
+          pixels[j] * 0.299 + pixels[j + 1] * 0.587 + pixels[j + 2] * 0.114;
+        lightValues.push(lightness / 255);
+      }
+    }
+    const tensor = tf.tensor(lightValues, [1, 28, 28]);
+
+    const predictions = (
+      scraper.model?.predict(tensor) as tf.Tensor
+    ).dataSync();
+    return scraper.model_classes[
+      predictions.indexOf(Math.max(...Array.from(predictions)))
+    ];
+  },
 
   // Finds horizontal lines seperating sections in loot screenshots (Material, Champions, Skins, etc.)
   findLines(ctx: CanvasRenderingContext2D) {
@@ -317,8 +388,12 @@ export const lootScreenshotRecognitionTool: LootScreenshotRecognitionTool = {
         ].reverse();
         checkLastThree.forEach((item) => {
           if (typeof item == "undefined") return;
-          const squareImage = ctx.getImageData(item.x, item.y, item.w, item.h)
-            .data;
+          const squareImage = ctx.getImageData(
+            item.x,
+            item.y,
+            item.w,
+            item.h
+          ).data;
           root: for (let i = 0; i < Math.max(item.y, item.x); i++) {
             for (let c = 0; c < 3; c++) {
               if (squareImage[i * 4 + i * item.w * 4 + c] > 50) {
