@@ -11,6 +11,9 @@ type Rect = {
   y: number;
   w: number;
   h: number;
+  type?: string;
+  count?: number;
+  name?: string;
 };
 
 interface LootScreenshotRecognitionTool {
@@ -30,11 +33,102 @@ export const lootScreenshotRecognitionTool: LootScreenshotRecognitionTool = {
     this.finished = true;
   },
 
-  classifyRects(ctx: CanvasRenderingContext2D, lootRects: any) {
-    // Create (1,28,28) tensors representing the chamion icon
-    const predictions = lootRects.map((rect: Rect) =>
-      this.getChampionOrSkinPredictionFromRect(ctx, rect)
+  rgb2hsv(r: number, g: number, b: number) {
+    let h = 0;
+    let rabs,
+      gabs,
+      babs,
+      rr,
+      gg,
+      bb,
+      s: number,
+      v: number,
+      diff: number,
+      diffc,
+      percentRoundFn;
+    rabs = r / 255;
+    gabs = g / 255;
+    babs = b / 255;
+    v = Math.max(rabs, gabs, babs);
+    diff = v - Math.min(rabs, gabs, babs);
+    diffc = (c: any) => (v - c) / 6 / diff + 1 / 2;
+    percentRoundFn = (num: number) => Math.round(num * 100) / 100;
+    if (diff == 0) {
+      h = s = 0;
+    } else {
+      s = diff / v;
+      rr = diffc(rabs);
+      gg = diffc(gabs);
+      bb = diffc(babs);
+
+      if (rabs === v) {
+        h = bb - gg;
+      } else if (gabs === v) {
+        h = 1 / 3 + rr - bb;
+      } else if (babs === v) {
+        h = 2 / 3 + gg - rr;
+      }
+      if (h < 0) {
+        h += 1;
+      } else if (h > 1) {
+        h -= 1;
+      }
+    }
+    return {
+      h: Math.round(h * 360),
+      s: percentRoundFn(s * 100),
+      v: percentRoundFn(v * 100),
+    };
+  },
+
+  getMasteryTokenFromRect(ctx: CanvasRenderingContext2D, rect: Rect) {
+    const canvas = document.createElement("canvas");
+    canvas
+      .getContext("2d")
+      ?.drawImage(ctx.canvas, rect.x + rect.w / 2, rect.y, 1, 1, 0, 0, 1, 1);
+    const [r, g, b] = Array.from(
+      canvas.getContext("2d")?.getImageData(0, 0, 1, 1)
+        .data as Uint8ClampedArray
     );
+    const hue = this.rgb2hsv(r, g, b).h;
+    if (hue > 275 && hue < 325) return 6;
+    if (hue > 150 && hue < 200) return 7;
+    return 0;
+  },
+
+  classifyRects(ctx: CanvasRenderingContext2D, lootRects: Rect[]) {
+    // Create (1,28,28) tensors representing the chamion icon
+    const predictions = lootRects.map((rect: Rect, i: number) =>
+      [
+        // this.getLootCountFromRect(ctx, rect),
+        // this.getChampionOrSkinPredictionFromRect(ctx, rect)
+      ].toString()
+    );
+
+    lootRects.forEach((rect: Rect, i: number) => {
+      if (rect.cat === "materials") {
+        const token = this.getMasteryTokenFromRect(ctx, rect);
+        if (token > 0) {
+          lootRects[i] = {
+            ...lootRects[i],
+            type: "token" + token.toString(),
+            count: this.getLootCountFromRect(ctx, rect),
+            name: this.getChampionOrSkinPredictionFromRect(ctx, rect),
+          };
+        }
+      } else if (
+        ["champions", "skins", "eternals", "ward_skins"].indexOf(rect.cat) >= 0
+      ) {
+        lootRects[i] = {
+          ...lootRects[i],
+          type: this.getPermanentOrShardPrediction(ctx, rect),
+          count: this.getLootCountFromRect(ctx, rect),
+          name: this.getChampionOrSkinPredictionFromRect(ctx, rect),
+        };
+      } else {
+        console.log("Skipping find because of category.", rect);
+      }
+    });
 
     const canvas = document.createElement("canvas");
     const ctx2d = canvas.getContext("2d");
@@ -45,22 +139,8 @@ export const lootScreenshotRecognitionTool: LootScreenshotRecognitionTool = {
       0,
       0
     );
-    const correctNumbers = [
-      4, -1, -1, 3, -1, -1, -1, 9, -1, 23, 0, 3, -1, 3, 3, 2, 2, 2, 2, 3, 2, 2,
-      3, 3, -1, -1, -1, -1, -1, 3, -1, 2, 2, 2, 2, -1, 2, 2, 2, -1, -1, 3, -1,
-      2, 2, -1, -1, 2, -1, 2, 2, 2, 2, 2, -1, -1, 2, -1, -1, 2, 2, 2, 3, 2, 3,
-      -1, 2, -1, 2, -1, 2, 2, -1, 2, 2, -1, 2, 2, -1, -1, -1, -1, -1, 2, -1, -1,
-      -1, 2, 2, 2, 2, 2, -1, 2, 2, -1, 2, 2, 3, 2, 2, 2, 2, 3, 2, 2, 2, 3, 2, 2,
-      -1, 2, 2, 2, 2, 2, 3, -1, 2, -1, 2, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-      -1, -1, -1, -1, -1, -1, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, 2, -1, -1,
-      -1, -1, -1, -1, -1, -1, -1, -1, -1, 2, -1, -1, 2, -1, -1, -1, -1, -1, -1,
-      -1, -1, -1, -1,
-    ];
 
-    lootRects.forEach((rect: any, i: number) => {
-      this.getLootCountFromRect(ctx, rect, predictions[i], correctNumbers[i]);
-
+    lootRects.forEach((rect: Rect, i: number) => {
       if (ctx2d == null) return;
       ctx2d.beginPath();
       ctx2d.lineWidth = 1;
@@ -69,19 +149,22 @@ export const lootScreenshotRecognitionTool: LootScreenshotRecognitionTool = {
       ctx2d.stroke();
       ctx2d.font = "10px Arial";
       ctx2d.fillStyle = "red";
-      ctx2d.fillText(predictions[i], rect.x + 3, rect.y + 15);
+      if (
+        typeof rect.type !== "undefined" &&
+        typeof rect.count !== "undefined" &&
+        typeof rect.name !== "undefined"
+      ) {
+        ctx2d.fillText(rect.type, rect.x + 3, rect.y + 15);
+        ctx2d.fillText(rect.count.toString(), rect.x + 3, rect.y + 30);
+        ctx2d.fillText(rect.name, rect.x + 3, rect.y + 45);
+      }
     });
 
     if (typeof lootCaptureManager.setImg2 === "function")
       lootCaptureManager.setImg2(canvas.toDataURL());
   },
 
-  getLootCountFromRect(
-    ctx: CanvasRenderingContext2D,
-    rect: Rect,
-    prediction: string,
-    correctNumber: number
-  ) {
+  getLootCountFromRect(ctx: CanvasRenderingContext2D, rect: Rect) {
     const offsets = {
       "1024": {
         w: 20,
@@ -190,8 +273,6 @@ export const lootScreenshotRecognitionTool: LootScreenshotRecognitionTool = {
       picture.length >= offset.minNumberHeight &&
       rowAboveLineDark;
 
-    if (isNumber && correctNumber == -1) alert(prediction + " problem");
-    console.log(correctNumber, prediction);
     console.log(
       "%c" +
         picture
@@ -203,6 +284,8 @@ export const lootScreenshotRecognitionTool: LootScreenshotRecognitionTool = {
     );
 
     if (isNumber) {
+      let foundNumbers = "";
+
       const freeColumns = [...Array(picture[0].length)].map((_, i) =>
         [...Array(picture.length)]
           .map((_, j) => (picture as number[][])[j][i])
@@ -221,9 +304,9 @@ export const lootScreenshotRecognitionTool: LootScreenshotRecognitionTool = {
       canvas.height = 7;
       numberColumnsRanges = numberColumnsRanges
         .reverse()
-        .filter((v) => v[1] - v[0] > 3);
+        .filter((v) => v[1] - v[0] > 2);
       numberColumnsRanges.forEach((range: number[]) => {
-        console.log(h);
+        // console.log(h);
         canvas
           .getContext("2d")
           ?.drawImage(
@@ -237,7 +320,8 @@ export const lootScreenshotRecognitionTool: LootScreenshotRecognitionTool = {
             7,
             7
           );
-        let number: number[] | number[][] = Array.from(
+        // let number: number[] | number[][] = Array.from(
+        let number: number[] = Array.from(
           canvas
             .getContext("2d")
             ?.getImageData(0, 0, 7, 7)
@@ -245,26 +329,45 @@ export const lootScreenshotRecognitionTool: LootScreenshotRecognitionTool = {
             .map((v) => (v > 100 ? 1 : 0)) as Uint8ClampedArray
         );
 
+        const tensor = tf.tensor(number, [1, 7, 7]);
+
+        const predictions = (
+          scraper.models.numbers.predict(tensor) as tf.Tensor
+        ).dataSync();
+
+        foundNumbers += predictions
+          .indexOf(Math.max(...Array.from(predictions)))
+          .toString();
+
+        console.log(
+          predictions.indexOf(Math.max(...Array.from(predictions))).toString(),
+          foundNumbers
+        );
+
         console.log(
           "%c  ",
           `font-size:70px;color:red;background-size:contain;background-repeat:no-repeat;background-image:url('${canvas.toDataURL()}');`
         );
 
-        number = [...Array(Math.ceil(number.length / 7))].map((_) =>
-          (number as number[]).splice(0, 7)
-        );
-        console.log(number);
-        console.log(
-          number
-            ?.map((l) => l.join(""))
-            .join("\n")
-            .replace(/0/g, ".")
-            .replace(/1/g, "#")
-        );
+        // number = [...Array(Math.ceil(number.length / 7))].map((_) =>
+        //   (number as number[]).splice(0, 7)
+        // );
+        // console.log(number);
+        // console.log(
+        //   number
+        //     ?.map((l) => l.join(""))
+        //     .join("\n")
+        //     .replace(/0/g, ".")
+        //     .replace(/1/g, "#")
+        // );
 
-        if (typeof lootCaptureManager.setImg3 === "function")
-          lootCaptureManager.setImg3(canvas.toDataURL());
+        // if (typeof lootCaptureManager.setImg3 === "function")
+        //   lootCaptureManager.setImg3(canvas.toDataURL());
       });
+      console.log(foundNumbers);
+      return parseInt(foundNumbers, 10);
+    } else {
+      return 1;
     }
   },
 
@@ -291,11 +394,53 @@ export const lootScreenshotRecognitionTool: LootScreenshotRecognitionTool = {
     const tensor = tf.tensor(lightValues, [1, 28, 28]);
 
     const predictions = (
-      scraper.model?.predict(tensor) as tf.Tensor
+      scraper.models.champions_skins_wards.predict(tensor) as tf.Tensor
     ).dataSync();
-    return scraper.model_classes[
-      predictions.indexOf(Math.max(...Array.from(predictions)))
-    ];
+
+    const bestPrediction =
+      scraper.lookupTable[
+        scraper.lookupTableLabels[
+          predictions.indexOf(Math.max(...Array.from(predictions)))
+        ]
+      ][0];
+
+    predictions.sort((a, b) => b - a);
+    // return (
+    //   `C:(${Math.round((predictions[0] - predictions[1]) * 10) / 10})` +
+    //   bestPrediction
+    // );
+    if (predictions[0] - predictions[1] < 10) {
+      return "Low confidence: " + bestPrediction;
+    }
+    return bestPrediction;
+  },
+
+  getPermanentOrShardPrediction(ctx: CanvasRenderingContext2D, rect: Rect) {
+    const canvas = document.createElement("canvas");
+    canvas.width = 28;
+    canvas.height = 28;
+    const lightValues = [];
+    canvas
+      .getContext("2d")
+      ?.drawImage(ctx.canvas, rect.x, rect.y, rect.w, rect.h, 0, 0, 28, 28);
+    let imageData = canvas.getContext("2d")?.getImageData(0, 0, 28, 28);
+    let pixels = imageData?.data;
+    if (typeof pixels !== "undefined") {
+      for (var j = 0; j < pixels.length; j += 4) {
+        let lightness =
+          pixels[j] * 0.299 + pixels[j + 1] * 0.587 + pixels[j + 2] * 0.114;
+        lightValues.push(lightness / 255);
+      }
+    }
+    const tensor = tf.tensor(lightValues, [1, 28, 28]);
+
+    const predictions = (
+      scraper.models.shard_permanent.predict(tensor) as tf.Tensor
+    ).dataSync();
+
+    return predictions.indexOf(Math.max(...Array.from(predictions))) == 0
+      ? "shard"
+      : "permanent";
   },
 
   // Finds horizontal lines seperating sections in loot screenshots (Material, Champions, Skins, etc.)
