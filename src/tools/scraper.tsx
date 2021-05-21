@@ -19,7 +19,8 @@ export const scraper: Scraper = {
   videoHeight: 0,
   model: undefined,
   initiated: false,
-  loot_ids: {},
+  modelsLoaded: false,
+  lookupTable: {},
   updateAssistant: (content: JSX.Element) => {},
 
   currentView: "home",
@@ -41,15 +42,27 @@ export const scraper: Scraper = {
   async init() {
     if (this.initiated) return;
     this.initiated = true;
-    scraper.loot_ids = (await fetch("/lookup_table.json"))
-      .text()
-      .then((data) => {
-        scraper.loot_ids = JSON.parse(data);
-        scraper.model_classes = data.match(/(?<=\[")([^"]+)(?=")/g);
-      });
-    this.model = await tf.loadLayersModel("/model/model.json");
 
-    setTimeout(() => console.log(scraper.loot_ids), 1000);
+    const [lookupTable, champions_skins_wards, numbers, shard_permanent] =
+      await Promise.all([
+        fetch("/lookup_table.json"),
+        tf.loadLayersModel("/models/champions_skins_wards/model.json"),
+        tf.loadLayersModel("/models/numbers/model.json"),
+        tf.loadLayersModel("/models/shard_permanent/model.json"),
+      ]);
+
+    await lookupTable.text().then((data) => {
+      scraper.lookupTable = JSON.parse(data);
+      scraper.lookupTableLabels = data.match(/(?<=")([^"]+)(?=":)/g);
+    });
+
+    scraper.models = {
+      champions_skins_wards,
+      numbers,
+      shard_permanent,
+    };
+
+    scraper.modelsLoaded = true;
   },
 
   startCapture(callback: () => void) {
