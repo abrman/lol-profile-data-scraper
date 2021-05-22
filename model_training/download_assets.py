@@ -1,4 +1,4 @@
-import urllib.request, json, html, re, os
+import urllib.request, html, re, os
 
 champions_url = "https://raw.communitydragon.org/pbe/plugins/rcp-be-lol-game-data/global/default/v1/champion-tiles/"
 border_images_url = "https://raw.communitydragon.org/pbe/plugins/rcp-fe-lol-loot/global/default/assets/border_images/"
@@ -30,8 +30,8 @@ def find_all_images_in_directory( url ):
 def find_all_images_in_directory_recursive( url ):
     with urllib.request.urlopen(url) as url_data:
         data = html.unescape(url_data.read().decode('utf-8'))
-        folders = list(re.findall('<td><a href="([^"]*/)"', data))
-        images = list(re.findall('<td><a href="([^"]*.(?:png|jpg|jpeg))', data))
+        folders = list(re.findall('<td class="link"><a href="([^"]*/)"', data))
+        images = list(re.findall('<td class="link"><a href="([^"]*.(?:png|jpg|jpeg))', data))
         images = list(map(lambda img: url+img, images))
 
         folders.remove("../")
