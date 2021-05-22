@@ -24,7 +24,12 @@ opener = urllib.request.build_opener()
 opener.addheaders = [('User-agent', 'Mozilla/5.0')]
 urllib.request.install_opener(opener)
 
-export = {}
+export = {
+    "champions": [],
+    "skins": [],
+    "wards": [],
+}
+
 with urllib.request.urlopen(skin_data_url) as url:
     data = re.search(
         '(?<=-- \<pre\>\nreturn )([^$]*)(?=-- \<\/pre\>)',
@@ -49,20 +54,19 @@ with urllib.request.urlopen(skin_data_url) as url:
             if skin["availability"] == "Legacy":
                 legacy = 1
 
-
-            export[key] = (full_skin_name, value, legacy)
+            if key.endswith("000"):
+                export["champions"].append( (key, full_skin_name, value, legacy) )
+            elif not key.endswith("None"):       
+                export["skins"].append( (key, full_skin_name, value, legacy) )
 
 with urllib.request.urlopen(ward_skin_data_url) as url:
     data = json.loads(url.read().decode())
     for i in range(len(data)):
         ward = data[i]
         isLegacy = 1 if ward["isLegacy"] else 0
-        export["w"+str(i)] = (ward["name"], 640, isLegacy)
+        export["wards"].append( (i, ward["name"], 640, isLegacy) )
 
 print(json.dumps(export))
-
-if not os.path.exists('shared'):
-    os.makedirs('shared')
 
 with open(os.path.join('public','lookup_table.json'), 'w') as json_save_file:
     json.dump(export, json_save_file)
