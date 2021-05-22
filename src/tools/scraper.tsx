@@ -19,7 +19,7 @@ export const scraper: Scraper = {
   videoHeight: 0,
   model: undefined,
   initiated: false,
-  modelsLoaded: false,
+  ready: false,
   lookupTable: {},
   updateAssistant: (content: JSX.Element) => {},
 
@@ -62,7 +62,7 @@ export const scraper: Scraper = {
       shard_permanent,
     };
 
-    scraper.modelsLoaded = true;
+    scraper.ready = true;
   },
 
   startCapture(callback: () => void) {

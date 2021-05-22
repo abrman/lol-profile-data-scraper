@@ -22,15 +22,17 @@ interface LootScreenshotRecognitionTool {
 
 export const lootScreenshotRecognitionTool: LootScreenshotRecognitionTool = {
   finished: false,
+  tokenCanvas: document.createElement("canvas"),
+  numberCanvas: document.createElement("canvas"),
+  rectCanvas: document.createElement("canvas"),
 
   recognize(ctx: CanvasRenderingContext2D) {
     if (this.finished) return;
     const lines = this.findLines(ctx);
     const lootRects = this.computeLootCropRects(ctx, lines);
-    console.log(lootRects);
-    this.classifyRects(ctx, lootRects);
-
+    const data = this.classifyRects(ctx, lootRects);
     this.finished = true;
+    return data;
   },
 
   rgb2hsv(r: number, g: number, b: number) {
@@ -53,7 +55,7 @@ export const lootScreenshotRecognitionTool: LootScreenshotRecognitionTool = {
     diff = v - Math.min(rabs, gabs, babs);
     diffc = (c: any) => (v - c) / 6 / diff + 1 / 2;
     percentRoundFn = (num: number) => Math.round(num * 100) / 100;
-    if (diff == 0) {
+    if (diff === 0) {
       h = s = 0;
     } else {
       s = diff / v;
@@ -82,7 +84,7 @@ export const lootScreenshotRecognitionTool: LootScreenshotRecognitionTool = {
   },
 
   getMasteryTokenFromRect(ctx: CanvasRenderingContext2D, rect: Rect) {
-    const canvas = document.createElement("canvas");
+    const canvas = this.tokenCanvas;
     canvas
       .getContext("2d")
       ?.drawImage(ctx.canvas, rect.x + rect.w / 2, rect.y, 1, 1, 0, 0, 1, 1);
@@ -97,14 +99,6 @@ export const lootScreenshotRecognitionTool: LootScreenshotRecognitionTool = {
   },
 
   classifyRects(ctx: CanvasRenderingContext2D, lootRects: Rect[]) {
-    // Create (1,28,28) tensors representing the chamion icon
-    const predictions = lootRects.map((rect: Rect, i: number) =>
-      [
-        // this.getLootCountFromRect(ctx, rect),
-        // this.getChampionOrSkinPredictionFromRect(ctx, rect)
-      ].toString()
-    );
-
     lootRects.forEach((rect: Rect, i: number) => {
       if (rect.cat === "materials") {
         const token = this.getMasteryTokenFromRect(ctx, rect);
@@ -141,27 +135,42 @@ export const lootScreenshotRecognitionTool: LootScreenshotRecognitionTool = {
     );
 
     lootRects.forEach((rect: Rect, i: number) => {
-      if (ctx2d == null) return;
+      if (ctx2d === null) return;
       ctx2d.beginPath();
-      ctx2d.lineWidth = 1;
-      ctx2d.strokeStyle = "red";
+
+      ctx2d.globalAlpha = 0.6;
+      ctx2d.fillStyle = "#000";
+      ctx2d.fillRect(rect.x, rect.y, rect.w, rect.h);
+      ctx2d.globalAlpha = 1;
+
+      ctx2d.lineWidth = 2;
+      ctx2d.strokeStyle =
+        (rect.name || "").indexOf("(?)") < 0 ? "#fff" : "yellow";
       ctx2d.rect(rect.x, rect.y, rect.w, rect.h);
       ctx2d.stroke();
-      ctx2d.font = "10px Arial";
-      ctx2d.fillStyle = "red";
       if (
         typeof rect.type !== "undefined" &&
         typeof rect.count !== "undefined" &&
         typeof rect.name !== "undefined"
       ) {
-        ctx2d.fillText(rect.type, rect.x + 3, rect.y + 15);
-        ctx2d.fillText(rect.count.toString(), rect.x + 3, rect.y + 30);
-        ctx2d.fillText(rect.name, rect.x + 3, rect.y + 45);
+        ctx2d.font = "10px Arial";
+        ctx2d.fillStyle = "#fff";
+        ctx2d.fillText(
+          `${rect.count.toString()}x ${rect.name} ${rect.type}`,
+          rect.x + 3,
+          rect.y + 15,
+          rect.w - 3
+        );
       }
     });
 
     if (typeof lootCaptureManager.setImg2 === "function")
       lootCaptureManager.setImg2(canvas.toDataURL());
+
+    return {
+      data: lootRects,
+      image: canvas.toDataURL(),
+    };
   },
 
   getLootCountFromRect(ctx: CanvasRenderingContext2D, rect: Rect) {
@@ -205,7 +214,7 @@ export const lootScreenshotRecognitionTool: LootScreenshotRecognitionTool = {
         scraper.videoWidth.toString() as "1024" | "1280" | "1600" | "1920"
       ] || offsets["1024"];
     //Find individual number rects
-    const canvas = document.createElement("canvas");
+    const canvas = this.numberCanvas;
     canvas.width = offset.w;
     canvas.height = offset.h;
 
@@ -219,10 +228,10 @@ export const lootScreenshotRecognitionTool: LootScreenshotRecognitionTool = {
       canvas
         .getContext("2d")
         ?.getImageData(0, 0, offset.w, offset.h)
-        .data.map((v, i, a) =>
+        .data.map((v: number, i: number, a: number[]) =>
           i % 4 !== 0 ? 0 : v > 128 && (v > a[i + 2] || 0) ? 1 : 0
         )
-        .filter((_, i) => i % 4 == 0) as Uint8ClampedArray
+        .filter((_: number, i: number) => i % 4 === 0) as Uint8ClampedArray
     );
 
     if (typeof picture !== "undefined")
@@ -261,27 +270,27 @@ export const lootScreenshotRecognitionTool: LootScreenshotRecognitionTool = {
           canvas
             .getContext("2d")
             ?.getImageData(0, 0, 15, 1)
-            .data.map((v, i, a) =>
+            .data.map((v: number, i: number, a: number[]) =>
               i % 4 !== 0 ? 0 : v > 128 && (v > a[i + 2] || 0) ? 1 : 0
             )
-            .filter((_, i) => i % 4 == 0) as Uint8ClampedArray
+            .filter((_: number, i: number) => i % 4 === 0) as Uint8ClampedArray
         )
-      ) == 0;
+      ) === 0;
 
     const isNumber =
       picture.length <= offset.maxNumberHeight &&
       picture.length >= offset.minNumberHeight &&
       rowAboveLineDark;
 
-    console.log(
-      "%c" +
-        picture
-          ?.map((l) => l.join(""))
-          .join("\n")
-          .replace(/0/g, ".")
-          .replace(/1/g, "#"),
-      isNumber ? "color:green" : "color: red"
-    );
+    // console.log(
+    //   "%c" +
+    //     picture
+    //       ?.map((l) => l.join(""))
+    //       .join("\n")
+    //       .replace(/0/g, ".")
+    //       .replace(/1/g, "#"),
+    //   isNumber ? "color:green" : "color: red"
+    // );
 
     if (isNumber) {
       let foundNumbers = "";
@@ -325,8 +334,8 @@ export const lootScreenshotRecognitionTool: LootScreenshotRecognitionTool = {
           canvas
             .getContext("2d")
             ?.getImageData(0, 0, 7, 7)
-            .data.filter((_, i) => i % 4 == 0)
-            .map((v) => (v > 100 ? 1 : 0)) as Uint8ClampedArray
+            .data.filter((_: number, i: number) => i % 4 === 0)
+            .map((v: number) => (v > 100 ? 1 : 0)) as Uint8ClampedArray
         );
 
         const tensor = tf.tensor(number, [1, 7, 7]);
@@ -339,15 +348,15 @@ export const lootScreenshotRecognitionTool: LootScreenshotRecognitionTool = {
           .indexOf(Math.max(...Array.from(predictions)))
           .toString();
 
-        console.log(
-          predictions.indexOf(Math.max(...Array.from(predictions))).toString(),
-          foundNumbers
-        );
+        // console.log(
+        //   predictions.indexOf(Math.max(...Array.from(predictions))).toString(),
+        //   foundNumbers
+        // );
 
-        console.log(
-          "%c  ",
-          `font-size:70px;color:red;background-size:contain;background-repeat:no-repeat;background-image:url('${canvas.toDataURL()}');`
-        );
+        // console.log(
+        //   "%c  ",
+        //   `font-size:70px;color:red;background-size:contain;background-repeat:no-repeat;background-image:url('${canvas.toDataURL()}');`
+        // );
 
         // number = [...Array(Math.ceil(number.length / 7))].map((_) =>
         //   (number as number[]).splice(0, 7)
@@ -364,7 +373,6 @@ export const lootScreenshotRecognitionTool: LootScreenshotRecognitionTool = {
         // if (typeof lootCaptureManager.setImg3 === "function")
         //   lootCaptureManager.setImg3(canvas.toDataURL());
       });
-      console.log(foundNumbers);
       return parseInt(foundNumbers, 10);
     } else {
       return 1;
@@ -375,7 +383,7 @@ export const lootScreenshotRecognitionTool: LootScreenshotRecognitionTool = {
     ctx: CanvasRenderingContext2D,
     rect: Rect
   ) {
-    const canvas = document.createElement("canvas");
+    const canvas = this.rectCanvas;
     canvas.width = 28;
     canvas.height = 28;
     const lightValues = [];
@@ -410,7 +418,7 @@ export const lootScreenshotRecognitionTool: LootScreenshotRecognitionTool = {
     //   bestPrediction
     // );
     if (predictions[0] - predictions[1] < 10) {
-      return "Low confidence: " + bestPrediction;
+      return "(?) " + bestPrediction;
     }
     return bestPrediction;
   },
@@ -438,7 +446,7 @@ export const lootScreenshotRecognitionTool: LootScreenshotRecognitionTool = {
       scraper.models.shard_permanent.predict(tensor) as tf.Tensor
     ).dataSync();
 
-    return predictions.indexOf(Math.max(...Array.from(predictions))) == 0
+    return predictions.indexOf(Math.max(...Array.from(predictions))) === 0
       ? "shard"
       : "permanent";
   },
@@ -532,7 +540,7 @@ export const lootScreenshotRecognitionTool: LootScreenshotRecognitionTool = {
           items.pop(),
         ].reverse();
         checkLastThree.forEach((item) => {
-          if (typeof item == "undefined") return;
+          if (typeof item === "undefined") return;
           const squareImage = ctx.getImageData(
             item.x,
             item.y,
@@ -573,22 +581,6 @@ export const lootScreenshotRecognitionTool: LootScreenshotRecognitionTool = {
       0
     );
 
-    // Debug
-
-    // items.forEach((item) => {
-    //   if (ctx2d == null) return;
-    //   ctx2d.beginPath();
-    //   ctx2d.lineWidth = 1;
-    //   ctx2d.strokeStyle = "red";
-    //   ctx2d.rect(item.x, item.y, item.w, item.h);
-    //   ctx2d.stroke();
-    //   ctx2d.font = "10px Arial";
-    //   ctx2d.fillStyle = "red";
-    //   ctx2d.fillText(item.cat, item.x + 3, item.y + 15);
-    // });
-
-    // if (typeof lootCaptureManager.setImg2 === "function")
-    //   lootCaptureManager.setImg2(canvas.toDataURL());
     return items;
   },
 };
