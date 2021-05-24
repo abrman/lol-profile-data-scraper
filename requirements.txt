@@ -1,0 +1,6 @@
+git+git://github.com/SirAnthony/slpp#slpp
+tensorflow
+tensorflowjs
+numpy
+opencv-python
+blend_modes
