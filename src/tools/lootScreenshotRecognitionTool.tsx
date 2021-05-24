@@ -87,7 +87,17 @@ export const lootScreenshotRecognitionTool: LootScreenshotRecognitionTool = {
     const canvas = this.tokenCanvas;
     canvas
       .getContext("2d")
-      ?.drawImage(ctx.canvas, rect.x + rect.w / 2, rect.y, 1, 1, 0, 0, 1, 1);
+      ?.drawImage(
+        ctx.canvas,
+        rect.x + rect.w / 2,
+        rect.y - 2,
+        1,
+        1,
+        0,
+        0,
+        1,
+        1
+      );
     const [r, g, b] = Array.from(
       canvas.getContext("2d")?.getImageData(0, 0, 1, 1)
         .data as Uint8ClampedArray
@@ -107,20 +117,43 @@ export const lootScreenshotRecognitionTool: LootScreenshotRecognitionTool = {
             ...lootRects[i],
             type: "token" + token.toString(),
             count: this.getLootCountFromRect(ctx, rect),
-            name: this.getChampionOrSkinPredictionFromRect(ctx, rect),
+            name: this.getChampionPredictionFromRect(ctx, rect),
           };
         }
-      } else if (
-        ["champions", "skins", "eternals", "ward_skins"].indexOf(rect.cat) >= 0
-      ) {
+      } else if (rect.cat === "champions") {
         lootRects[i] = {
           ...lootRects[i],
           type: this.getPermanentOrShardPrediction(ctx, rect),
           count: this.getLootCountFromRect(ctx, rect),
-          name: this.getChampionOrSkinPredictionFromRect(ctx, rect),
+          name: this.getChampionPredictionFromRect(ctx, rect),
         };
-      } else {
-        console.log("Skipping find because of category.", rect);
+      } else if (rect.cat === "skins") {
+        lootRects[i] = {
+          ...lootRects[i],
+          type: this.getPermanentOrShardPrediction(ctx, rect),
+          count: this.getLootCountFromRect(ctx, rect),
+          name: this.getSkinPredictionFromRect(ctx, rect),
+        };
+      } else if (rect.cat === "ward_skins") {
+        lootRects[i] = {
+          ...lootRects[i],
+          type: this.getPermanentOrShardPrediction(ctx, rect),
+          count: this.getLootCountFromRect(ctx, rect),
+          name: this.getWardPredictionFromRect(ctx, rect),
+        };
+      } else if (rect.cat === "eternals") {
+        lootRects[i] = {
+          ...lootRects[i],
+          type: "eternal",
+          count: this.getLootCountFromRect(ctx, rect),
+          name: this.getChampionPredictionFromRect(ctx, rect),
+        };
+      } else if (["little_legends", "emotes", "icons"].indexOf(rect.cat) >= 0) {
+        console.log(
+          "Skipping item from category as it is not yet supported.",
+          rect.cat,
+          rect
+        );
       }
     });
 
@@ -379,10 +412,7 @@ export const lootScreenshotRecognitionTool: LootScreenshotRecognitionTool = {
     }
   },
 
-  getChampionOrSkinPredictionFromRect(
-    ctx: CanvasRenderingContext2D,
-    rect: Rect
-  ) {
+  getChampionPredictionFromRect(ctx: CanvasRenderingContext2D, rect: Rect) {
     const canvas = this.rectCanvas;
     canvas.width = 28;
     canvas.height = 28;
@@ -402,21 +432,85 @@ export const lootScreenshotRecognitionTool: LootScreenshotRecognitionTool = {
     const tensor = tf.tensor(lightValues, [1, 28, 28]);
 
     const predictions = (
-      scraper.models.champions_skins_wards.predict(tensor) as tf.Tensor
+      scraper.models.champions.predict(tensor) as tf.Tensor
     ).dataSync();
 
     const bestPrediction =
-      scraper.lookupTable[
-        scraper.lookupTableLabels[
-          predictions.indexOf(Math.max(...Array.from(predictions)))
-        ]
-      ][0];
+      scraper.lookupTable["champions"][
+        predictions.indexOf(Math.max(...Array.from(predictions)))
+      ][1];
 
     predictions.sort((a, b) => b - a);
-    // return (
-    //   `C:(${Math.round((predictions[0] - predictions[1]) * 10) / 10})` +
-    //   bestPrediction
-    // );
+    if (predictions[0] - predictions[1] < 10) {
+      return "(?) " + bestPrediction;
+    }
+    return bestPrediction;
+  },
+
+  getSkinPredictionFromRect(ctx: CanvasRenderingContext2D, rect: Rect) {
+    const canvas = this.rectCanvas;
+    canvas.width = 28;
+    canvas.height = 28;
+    const lightValues = [];
+    canvas
+      .getContext("2d")
+      ?.drawImage(ctx.canvas, rect.x, rect.y, rect.w, rect.h, 0, 0, 28, 28);
+    let imageData = canvas.getContext("2d")?.getImageData(0, 0, 28, 28);
+    let pixels = imageData?.data;
+    if (typeof pixels !== "undefined") {
+      for (var j = 0; j < pixels.length; j += 4) {
+        let lightness =
+          pixels[j] * 0.299 + pixels[j + 1] * 0.587 + pixels[j + 2] * 0.114;
+        lightValues.push(lightness / 255);
+      }
+    }
+    const tensor = tf.tensor(lightValues, [1, 28, 28]);
+
+    const predictions = (
+      scraper.models.skins.predict(tensor) as tf.Tensor
+    ).dataSync();
+
+    const bestPrediction =
+      scraper.lookupTable["skins"][
+        predictions.indexOf(Math.max(...Array.from(predictions)))
+      ][1];
+
+    predictions.sort((a, b) => b - a);
+    if (predictions[0] - predictions[1] < 10) {
+      return "(?) " + bestPrediction;
+    }
+    return bestPrediction;
+  },
+
+  getWardPredictionFromRect(ctx: CanvasRenderingContext2D, rect: Rect) {
+    const canvas = this.rectCanvas;
+    canvas.width = 28;
+    canvas.height = 28;
+    const lightValues = [];
+    canvas
+      .getContext("2d")
+      ?.drawImage(ctx.canvas, rect.x, rect.y, rect.w, rect.h, 0, 0, 28, 28);
+    let imageData = canvas.getContext("2d")?.getImageData(0, 0, 28, 28);
+    let pixels = imageData?.data;
+    if (typeof pixels !== "undefined") {
+      for (var j = 0; j < pixels.length; j += 4) {
+        let lightness =
+          pixels[j] * 0.299 + pixels[j + 1] * 0.587 + pixels[j + 2] * 0.114;
+        lightValues.push(lightness / 255);
+      }
+    }
+    const tensor = tf.tensor(lightValues, [1, 28, 28]);
+
+    const predictions = (
+      scraper.models.wards.predict(tensor) as tf.Tensor
+    ).dataSync();
+
+    const bestPrediction =
+      scraper.lookupTable["wards"][
+        predictions.indexOf(Math.max(...Array.from(predictions)))
+      ][1];
+
+    predictions.sort((a, b) => b - a);
     if (predictions[0] - predictions[1] < 10) {
       return "(?) " + bestPrediction;
     }

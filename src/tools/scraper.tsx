@@ -2,6 +2,7 @@ import React from "react";
 import { interfaceManager } from "./interfaceManager";
 import { lootCaptureManager } from "./lootCaptureManager";
 import { lootScreenshotRecognitionTool } from "./lootScreenshotRecognitionTool";
+import { championsCaptureManager } from "./championsCaptureManager";
 import { mediaStreamManager } from "./mediaStreamManager";
 import * as tf from "@tensorflow/tfjs";
 
@@ -30,6 +31,7 @@ export const scraper: Scraper = {
     );
 
     if (scraper.currentView === "loot") lootCaptureManager.loop();
+    if (scraper.currentView === "champions") championsCaptureManager.loop();
 
     if (lootCaptureManager.finalScreenshotComplete)
       lootScreenshotRecognitionTool.recognize(lootCaptureManager.lootCanvas);
@@ -43,10 +45,12 @@ export const scraper: Scraper = {
     if (this.initiated) return;
     this.initiated = true;
 
-    const [lookupTable, champions_skins_wards, numbers, shard_permanent] =
+    const [lookupTable, champions, skins, wards, numbers, shard_permanent] =
       await Promise.all([
         fetch("/lookup_table.json"),
-        tf.loadLayersModel("/models/champions_skins_wards/model.json"),
+        tf.loadLayersModel("/models/champions/model.json"),
+        tf.loadLayersModel("/models/skins/model.json"),
+        tf.loadLayersModel("/models/wards/model.json"),
         tf.loadLayersModel("/models/numbers/model.json"),
         tf.loadLayersModel("/models/shard_permanent/model.json"),
       ]);
@@ -57,7 +61,9 @@ export const scraper: Scraper = {
     });
 
     scraper.models = {
-      champions_skins_wards,
+      champions,
+      skins,
+      wards,
       numbers,
       shard_permanent,
     };
