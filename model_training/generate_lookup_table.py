@@ -1,9 +1,6 @@
-import urllib.request, json
-import re
-import html
-import json
-import os
+import urllib.request, json, re, html, json, os
 from slpp import slpp as lua
+
 # SLPP to convert to parse lua object from wikipedia
 # pip install git+https://github.com/SirAnthony/slpp
 # https://github.com/SirAnthony/slpp
