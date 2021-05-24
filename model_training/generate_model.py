@@ -12,7 +12,7 @@ multiline_str = """
 This proccess may take several hours to fully complete.
 Following steps will be executed:
   1. Game data generation (skin names, prices, etc.)
-  2. Game image assets download (~140MB)
+  2. Game image assets download (~400MB)
   3. Generating training images from assets (~2GB)
   4. Training each of the models:
     A. Champion,
@@ -154,15 +154,6 @@ if input_task.lower() == "all" or input_task == "2":
     with open(os.path.join("public","lookup_table.json")) as json_file:
         lookup_table  = json.load(json_file)
 
-    champions_url = "https://raw.communitydragon.org/pbe/plugins/rcp-be-lol-game-data/global/default/v1/champion-tiles/"
-    border_images_url = "https://raw.communitydragon.org/pbe/plugins/rcp-fe-lol-loot/global/default/assets/border_images/"
-    rarity_icons_url = "https://raw.communitydragon.org/pbe/plugins/rcp-fe-lol-loot/global/default/assets/rarity_icons/"
-    tag_icons_url = "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-loot/global/default/assets/tag_icons/"
-    ward_skins_url = "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/content/src/leagueclient/wardskinimages/"
-
-    # My TFT loot is empty, horrible starting point. Leaving this here for anyone who'd want to pick it up from here :)
-    companions_url = "https://raw.communitydragon.org/pbe/game/assets/loot/companions/"
-
     assets_folder = os.path.join("model_training","assets")
 
     def find_all_images_in_directory( url ):
@@ -196,12 +187,17 @@ if input_task.lower() == "all" or input_task == "2":
 
     # Queue of download target folders & source urls pairs
     queue = (
-        ("champions_and_skins", champions_url),
-        ("border_images", border_images_url),
-        ("rarity_icons", rarity_icons_url),
-        ("tag_icons", tag_icons_url),
-        ("ward_skins", ward_skins_url),
+        ("champions_and_skins", "https://raw.communitydragon.org/pbe/plugins/rcp-be-lol-game-data/global/default/v1/champion-tiles/"),
+        ("border_images", "https://raw.communitydragon.org/pbe/plugins/rcp-fe-lol-loot/global/default/assets/border_images/"),
+        ("rarity_icons", "https://raw.communitydragon.org/pbe/plugins/rcp-fe-lol-loot/global/default/assets/rarity_icons/"),
+        ("tag_icons", "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-loot/global/default/assets/tag_icons/"),
+        ("ward_skins", "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/content/src/leagueclient/wardskinimages/"),
+        ("border_images_collection_skins", "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-collections/global/default/images/skins-viewer/borders/"),
+        ("border_images_collection_wards_icons", "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-collections/global/default/images/item-element/borders/")
     )
+
+    # My TFT loot is empty, horrible starting point. Leaving this here for anyone who'd want to pick it up from here :)
+    companions_url = "https://raw.communitydragon.org/pbe/game/assets/loot/companions/"
 
     for item in queue:
         print("-  Loading image links to download into: "+os.path.join(assets_folder, item[0]))
@@ -217,39 +213,61 @@ if input_task.lower() == "all" or input_task == "2":
 
 
 
-
-    print("-  Loading image links to download into: "+os.path.join(assets_folder, "loading_screens"))
+    print("-  Loading image links to download into: "+os.path.join(assets_folder, "loading_screen_assets"))
     req = urllib.request.Request("https://raw.communitydragon.org/latest/cdragon/files.exported.txt")
     resp = urllib.request.urlopen(req)
     images = resp.read().splitlines()
-
-    images = list(filter(lambda img: re.search('loadscreen([^1-9]*)\.png', str(img)) and str(img).startswith("b'game"), images))
-    images = list(map(lambda img: "https://raw.communitydragon.org/latest/game/" + str(img).split("game/")[1][:-1], images))
 
     champ_ids = {}
     for champion_data in lookup_table["champions"]:
         whitelist = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
         champ = ''.join(filter(whitelist.__contains__, champion_data[1])).lower()
-        champ_ids[champ] = champion_data[0]
+        champ_ids[champ] = champion_data[0][:-3]
 
-    # Love it
+    # I love exceptions :)
     champ_ids["nunu"] = champ_ids["nunuwillump"]
     champ_ids["monkeyking"] = champ_ids["wukong"]
+
+    intentionally_ignored_splashes = [
+        # unintentinally in game assets most likely - https://raw.communitydragon.org/latest/game//assets/characters/sett/skins/base/settloadscreen_le.sett.png
+        "875000_limited.png", 
+
+        # copies of 5005, 157001,24007 and 89004 (same splash art, chromas?)
+        "5008.png", "5009.png", "5010.png", "5011.png", "5012.png",
+        "157005.png", "157006.png", "157007.png", "157008.png"
+        "24009.png", "24010.png", "24011.png"
+        "89005.png", "89006.png", "89007.png"
+
+        # Default version of the skin has limited edition border
+        "235009_limited.png", "518011_limited.png", "92022_limited.png", 
+    ]
+
+
+    images = list(filter(lambda img: re.search('loadscreen.*\.png', str(img)) and str(img).startswith("b'game/ass") and not "/hud/" in str(img), images))
+    images = list(map(lambda img: "https://raw.communitydragon.org/latest/game/" + str(img).split("game")[1][:-1], images))
+    images_data = list(map(lambda img: re.sub('\.pie[^\.]*','',img), images))
+    limited_edition = list(map(lambda img: re.search(r"_le[^a-z]",img), images_data))
+    image_data = list(map(lambda img: re.sub('^.*\/([^\/]*)\/([^\/]*)load[^\/]*\.png',r'\1,\2', img), images_data))
 
     for i in progressbar(range(len(images)), "-  Downloading: ", 40):
         image = images[i]
         source = image
-        champ = image.split("/")[-1].split("load")[0]
-        if champ in champ_ids:
-            champ = champ_ids[champ] + ".png"
-            destination = os.path.join(os.path.join(assets_folder, "loading_screens"), champ )
+
+        data = image_data[i].replace("base","").replace("skin","").split(",")
+        champ_id = champ_ids[data[1]] if data[1] in champ_ids else data[1]
+        skin_id = data[0].zfill(3)
+        filename = champ_id+skin_id+("_limited" if limited_edition[i] else "")+".png"
+
+        # Check if skin is valid skin (no weird special game mode stuff) and compare against intentionally ignored
+        # These intentionally ignored splashes were duplicates which would confuse the machine learning model as it's same images classified differently
+        if re.search(r"^[0-9]*(_limited)?\.png$", filename) and filename not in intentionally_ignored_splashes:
+            destination = os.path.join(os.path.join(assets_folder, "loading_screen_assets"), filename )
             if not os.path.isfile( destination ):
                 if not os.path.exists(destination.rsplit(os.path.sep,1)[0]):
                     os.makedirs(destination.rsplit(os.path.sep,1)[0])
                 urllib.request.urlretrieve(source, destination)
     
-    print("-  Game asset download complete!")
-
+    print("-  Game asset down   load complete!")
 
 
 
@@ -673,3 +691,6 @@ if input_task.lower() == "all" or input_task.startswith("4"):
         del shard_permanent_train_labels
         del shard_permanent_train_images
         print("-     Border model training is complete!")
+
+
+input("Completed. Press Enter key to exit.")
