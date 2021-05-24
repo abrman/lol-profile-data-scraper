@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { lootCaptureManager } from "../tools/lootCaptureManager";
+import { championsCaptureManager } from "../tools/championsCaptureManager";
 
 const Debug = () => {
   const [img1, setImg1] = useState("data:image/jpeg;base64,");
@@ -10,6 +11,9 @@ const Debug = () => {
     lootCaptureManager.setImg1 = setImg1;
     lootCaptureManager.setImg2 = setImg2;
     lootCaptureManager.setImg3 = setImg3;
+    championsCaptureManager.setImg1 = setImg1;
+    championsCaptureManager.setImg2 = setImg2;
+    championsCaptureManager.setImg3 = setImg3;
   }, []);
 
   return (
