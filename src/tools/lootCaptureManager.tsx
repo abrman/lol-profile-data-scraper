@@ -63,15 +63,13 @@ export const lootCaptureManager: LootCaptureManager = {
 
     this.scrollBarCanvas.canvas.width = 1;
     this.scrollBarCanvas.canvas.height = 1080;
-    this.matchingCanvas.canvas.width = this.screenshotAreaData[
-      scraper.videoWidth
-    ].w;
+    this.matchingCanvas.canvas.width =
+      this.screenshotAreaData[scraper.videoWidth].w;
     this.matchingCanvas.canvas.height =
       scraper.videoHeight - this.screenshotAreaData[scraper.videoWidth].y;
 
-    this.lootCanvas.canvas.width = this.screenshotAreaData[
-      scraper.videoWidth
-    ].w;
+    this.lootCanvas.canvas.width =
+      this.screenshotAreaData[scraper.videoWidth].w;
     this.lootCanvas.canvas.height =
       400 +
       this.screenshotAreaData[scraper.videoWidth].h *
@@ -200,18 +198,16 @@ export const lootCaptureManager: LootCaptureManager = {
       ) {
         for (let x = 0; x < 160; x++) {
           for (let y = 0; y < 80; y++) {
-            for (let c = 0; c < 3; c++) {
-              const search = searchData[x * 4 + c + (((x + y) * 640) % 51200)];
-              const match =
-                matchingData[i * 640 + x * 4 + c + (((x + y) * 640) % 51200)];
-              if (
-                Math.abs(search - match) < 100 ||
-                (search < 50 && match < 50)
-              ) {
-              } else {
-                continue search;
-              }
+            // for (let c = 0; c < 3; c++) {
+            const c = 0;
+            const search = searchData[x * 4 + c + (((x + y) * 640) % 51200)];
+            const match =
+              matchingData[i * 640 + x * 4 + c + (((x + y) * 640) % 51200)];
+            if (Math.abs(search - match) < 100 || (search < 50 && match < 50)) {
+            } else {
+              continue search;
             }
+            // }
           }
         }
 

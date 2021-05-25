@@ -96,9 +96,9 @@ export const championsCaptureManager: ChampionsCaptureManager = {
       // console.log([r1, g1, b1], [r2, g2, b2]);
       // debugger;
       if (
-        Math.abs(r1 - r2) > 10 ||
-        Math.abs(g1 - g2) > 10 ||
-        Math.abs(b1 - b2) > 10
+        Math.abs(r1 - r2) > 15 ||
+        Math.abs(g1 - g2) > 15 ||
+        Math.abs(b1 - b2) > 15
       )
         return false;
     }
@@ -198,18 +198,16 @@ export const championsCaptureManager: ChampionsCaptureManager = {
             y < this.matchingAreaData[scraper.videoWidth].h;
             y++
           ) {
-            for (let c = 0; c < 3; c++) {
-              const search = searchData[x * 4 + c + (((x + y) * 640) % 51200)];
-              const match =
-                matchingData[i * 640 + x * 4 + c + (((x + y) * 640) % 51200)];
-              if (
-                Math.abs(search - match) < 100 ||
-                (search < 50 && match < 50)
-              ) {
-              } else {
-                continue search;
-              }
+            // for (let c = 0; c < 3; c++) {
+            const c = 0;
+            const search = searchData[x * 4 + c + (((x + y) * 640) % 51200)];
+            const match =
+              matchingData[i * 640 + x * 4 + c + (((x + y) * 640) % 51200)];
+            if (Math.abs(search - match) < 100 || (search < 50 && match < 50)) {
+            } else {
+              continue search;
             }
+            // }
           }
         }
 
