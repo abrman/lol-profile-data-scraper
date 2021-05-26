@@ -164,7 +164,7 @@ if input_task.lower() == "all" or input_task == "2":
         with urllib.request.urlopen(url) as url_data:
             data = html.unescape(url_data.read().decode('utf-8'))
             folders = list(re.findall('<td class="link"><a href="([^"]*/)"', data))
-            images = list(re.findall('<td class="link"><a href="([^"]*.(?:png|jpg|jpeg))', data))
+            images = list(re.findall('<td class="link"><a href="([^"]*.(?:png|jpg|jpeg|svg))', data))
             images = list(map(lambda img: url+img, images))
 
             folders.remove("../")
@@ -228,10 +228,7 @@ if input_task.lower() == "all" or input_task == "2":
     champ_ids["nunu"] = champ_ids["nunuwillump"]
     champ_ids["monkeyking"] = champ_ids["wukong"]
 
-    intentionally_ignored_splashes = [
-        # unintentinally in game assets most likely - https://raw.communitydragon.org/latest/game//assets/characters/sett/skins/base/settloadscreen_le.sett.png
-        "875000_limited.png", 
-
+    intentionally_ignored_splashes = [ 
         # copies of 5005, 157001,24007 and 89004 (same splash art, chromas?)
         "5008.png", "5009.png", "5010.png", "5011.png", "5012.png",
         "157005.png", "157006.png", "157007.png", "157008.png"
@@ -258,16 +255,16 @@ if input_task.lower() == "all" or input_task == "2":
         skin_id = data[0].zfill(3)
         filename = champ_id+skin_id+("_limited" if limited_edition[i] else "")+".png"
 
-        # Check if skin is valid skin (no weird special game mode stuff) and compare against intentionally ignored
+        # Check if skin is valid skin (no weird special game mode stuff, or default skin with limited edition), and compare against intentionally ignored
         # These intentionally ignored splashes were duplicates which would confuse the machine learning model as it's same images classified differently
-        if re.search(r"^[0-9]*(_limited)?\.png$", filename) and filename not in intentionally_ignored_splashes:
+        if re.search(r"^[0-9]*(_limited)?\.png$", filename) and filename not in intentionally_ignored_splashes and not filename.endswith("000_limited.png"):
             destination = os.path.join(os.path.join(assets_folder, "loading_screen_assets"), filename )
             if not os.path.isfile( destination ):
                 if not os.path.exists(destination.rsplit(os.path.sep,1)[0]):
                     os.makedirs(destination.rsplit(os.path.sep,1)[0])
                 urllib.request.urlretrieve(source, destination)
     
-    print("-  Game asset down   load complete!")
+    print("-  Game asset download complete!")
 
 
 
