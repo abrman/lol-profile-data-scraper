@@ -1,10 +1,14 @@
 import React from "react";
 import { interfaceManager } from "./interfaceManager";
-import { lootCaptureManager } from "./lootCaptureManager";
-import { lootScreenshotRecognitionTool } from "./lootScreenshotRecognitionTool";
-import { championsCaptureManager } from "./championsCaptureManager";
 import { mediaStreamManager } from "./mediaStreamManager";
 import * as tf from "@tensorflow/tfjs";
+
+import Skins from "./views/skins";
+import Loot from "./views/loot";
+import Champions from "./views/champions";
+
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 
 interface Scraper {
   videoElement: React.RefObject<HTMLVideoElement>;
@@ -14,7 +18,7 @@ interface Scraper {
   [x: string]: any;
 }
 
-export const scraper: Scraper = {
+const scraper: Scraper = {
   videoElement: React.createRef<HTMLVideoElement>(),
   videoWidth: 0,
   videoHeight: 0,
@@ -26,19 +30,58 @@ export const scraper: Scraper = {
 
   currentView: "home",
   loop() {
-    scraper.currentView = interfaceManager.currentInterface(
-      scraper.videoElement
+    const info = {
+      view: interfaceManager.currentInterface(scraper.videoElement),
+      progress: {
+        loot:
+          (scraper.loot &&
+            (scraper.loot.complete ? "100%" : scraper.loot.progress())) ||
+          "0%",
+        skins:
+          (scraper.skins &&
+            (scraper.skins.complete ? "100%" : scraper.skins.progress())) ||
+          "0%",
+        champions:
+          (scraper.champions &&
+            (scraper.champions.complete
+              ? "100%"
+              : scraper.champions.progress())) ||
+          "0%",
+      },
+    };
+
+    const scanningFinished = Object.values(info.progress).reduce(
+      (prev, curr) => prev && curr == "100%",
+      true
     );
 
-    if (scraper.currentView === "loot") lootCaptureManager.loop();
-    if (scraper.currentView === "champions") championsCaptureManager.loop();
+    scraper.updateAssistant(
+      <>
+        <p>
+          Current view: {info.view}
+          <br />
+          Loot: {info.progress.loot}
+          <br />
+          Skins: {info.progress.skins}
+          <br />
+          Champions: {info.progress.champions}
+        </p>
+      </>
+    );
 
-    if (lootCaptureManager.finalScreenshotComplete)
-      lootScreenshotRecognitionTool.recognize(lootCaptureManager.lootCanvas);
-
-    scraper.updateAssistant(<>Current view: {scraper.currentView}</>);
     requestAnimationFrame(scraper.loop);
-    // setTimeout(scraper.loop, 1000);
+
+    if (info.progress.loot == "100%") scraper.loot.recognize();
+    if (info.progress.loot == "100%") scraper.skins.recognize();
+
+    if (scanningFinished) {
+      if (typeof scraper.setImg1 === "function" && scraper.skins)
+        scraper.setImg1(scraper.skins.annotatedCanvas.toDataURL());
+      if (typeof scraper.setImg2 === "function" && scraper.loot)
+        scraper.setImg2(scraper.loot.annotatedCanvas.toDataURL());
+      if (typeof scraper.setImg3 === "function" && scraper.champions)
+        scraper.setImg3(scraper.champions.canvas.toDataURL());
+    }
   },
 
   async init() {
@@ -72,6 +115,15 @@ export const scraper: Scraper = {
   },
 
   startCapture(callback: () => void) {
-    mediaStreamManager.startCapture(callback);
+    const currView = () => interfaceManager.currentInterface(this.videoElement);
+
+    mediaStreamManager.startCapture(() => {
+      callback();
+      this.skins = new Skins(this.videoElement, currView);
+      this.loot = new Loot(this.videoElement, currView);
+      this.champions = new Champions(this.videoElement, currView);
+    });
   },
 };
+
+export default scraper;

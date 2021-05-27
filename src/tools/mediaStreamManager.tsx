@@ -1,4 +1,4 @@
-import { scraper } from "./scraper";
+import scraper from "./scraper";
 
 interface MediaStreamManager {
   captureStream: any;
@@ -9,6 +9,7 @@ const mediaDevices = navigator.mediaDevices as any; // workaround: https://githu
 
 export const mediaStreamManager: MediaStreamManager = {
   captureStream: null,
+
   startCapture(callback: () => void) {
     (async () => {
       try {
@@ -23,6 +24,7 @@ export const mediaStreamManager: MediaStreamManager = {
     })().then((stream) => {
       this.captureStream = stream;
       this.onStreamBegin(stream, callback);
+      console.log(stream);
     });
   },
 
@@ -42,23 +44,24 @@ export const mediaStreamManager: MediaStreamManager = {
         );
         return;
       }
-      scraper.videoElement.current.play();
-      scraper.videoWidth = scraper.videoElement.current.videoWidth;
-      scraper.videoHeight = scraper.videoElement.current.videoHeight;
+      scraper.videoElement.current.play().then(() => {
+        scraper.videoWidth = scraper.videoElement.current.videoWidth;
+        scraper.videoHeight = scraper.videoElement.current.videoHeight;
 
-      if (
-        ["19201080", "1600900", "1024576", "1280720"].indexOf(
-          scraper.videoWidth.toString() + scraper.videoHeight.toString()
-        ) < 0
-      ) {
-        alert(
-          "Please share only the League of Legends window. Site will reload now"
-        );
-        window.location.reload();
-      }
+        if (
+          ["19201080", "1600900", "1024576", "1280720"].indexOf(
+            scraper.videoWidth.toString() + scraper.videoHeight.toString()
+          ) < 0
+        ) {
+          alert(
+            "Please share only the League of Legends window. Site will reload now"
+          );
+          window.location.reload();
+        }
 
-      callback();
-      scraper.loop();
+        scraper.loop();
+        callback();
+      });
     };
   },
 };
