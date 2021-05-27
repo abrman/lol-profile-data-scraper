@@ -66,22 +66,27 @@ const scraper: Scraper = {
           <br />
           Champions: {info.progress.champions}
         </p>
+        {scanningFinished && "temp button :)"}
       </>
     );
 
-    requestAnimationFrame(scraper.loop);
-
-    if (info.progress.loot === "100%") scraper.loot.recognize();
-    if (info.progress.loot === "100%") scraper.skins.recognize();
-
-    if (scanningFinished) {
-      if (typeof scraper.setImg1 === "function" && scraper.skins)
-        scraper.setImg1(scraper.skins.annotatedCanvas.toDataURL());
-      if (typeof scraper.setImg2 === "function" && scraper.loot)
-        scraper.setImg2(scraper.loot.annotatedCanvas.toDataURL());
-      if (typeof scraper.setImg3 === "function" && scraper.champions)
-        scraper.setImg3(scraper.champions.canvas.toDataURL());
+    if (info.progress.loot === "100%") {
+      scraper.loot.recognize();
+      scraper.setImg1(scraper.loot.annotatedCanvas.toDataURL());
+      scraper.setImg1 = null;
     }
+    if (info.progress.skins === "100%") {
+      scraper.skins.recognize();
+      scraper.setImg2(scraper.skins.annotatedCanvas.toDataURL());
+      scraper.setImg2 = null;
+    }
+    if (info.progress.champions === "100%") {
+      scraper.champions.recognize();
+      scraper.setImg3(scraper.champions.annotatedCanvas.toDataURL());
+      scraper.setImg3 = null;
+    }
+
+    requestAnimationFrame(scraper.loop);
   },
 
   async init() {

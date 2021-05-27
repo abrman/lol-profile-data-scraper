@@ -1,6 +1,38 @@
 import Capture from "../Capture";
+import * as tf from "@tensorflow/tfjs";
+// import JSZip from "jszip";
+// import { saveAs } from "file-saver";
 
 type Color = [r: number, g: number, b: number];
+type Rect = {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  cat?: string;
+  type?: string;
+  count?: number;
+  name?: string;
+};
+
+type Models = {
+  champions: tf.LayersModel;
+  skins: tf.LayersModel;
+  wards: tf.LayersModel;
+  numbers: tf.LayersModel;
+  shard_permanent: tf.LayersModel;
+};
+
+type LookupLabels =
+  | [id: number, name: string, price: number, legacy: number][]
+  | string[];
+
+type LookupTable = {
+  champions: LookupLabels;
+  skins: LookupLabels;
+  wards: LookupLabels;
+  [x: string]: any;
+};
 
 export default class Champions extends Capture {
   constructor(
@@ -39,5 +71,142 @@ export default class Champions extends Capture {
       },
     };
     super(video, options, checkFunction);
+  }
+
+  lookupTable: LookupTable;
+  models: Models;
+  classifiedRects: Rect[];
+  annotatedCanvas: HTMLCanvasElement;
+
+  recognize() {
+    if (this.classifiedRects) return this.classifiedRects;
+
+    const rects = this.computeRects();
+    this.classifiedRects = rects; //this.classifyRects(rects);
+
+    this.annotatedCanvas = document.createElement("canvas");
+    const annotatedCtx = this.annotatedCanvas.getContext("2d");
+    this.annotatedCanvas.width = this.canvas.width;
+    this.annotatedCanvas.height = this.canvas.height;
+
+    annotatedCtx.drawImage(this.canvas, 0, 0);
+
+    // var zip = new JSZip();
+
+    this.classifiedRects.forEach((rect: Rect, i: number) => {
+      // const c = document.createElement("canvas").getContext("2d");
+      // if (c != null) {
+      //   c.canvas.width = rect.w;
+      //   c.canvas.height = rect.h;
+      //   c.drawImage(
+      //     this.canvas,
+      //     rect.x,
+      //     rect.y,
+      //     rect.w,
+      //     rect.h,
+      //     0,
+      //     0,
+      //     rect.w,
+      //     rect.h
+      //   );
+      //   console.log(`Zipping: skin_${i}.png`);
+      //   zip.file(`skin_${i}.png`, c.canvas.toDataURL().split("base64,")[1], {
+      //     base64: true,
+      //   });
+      // }
+
+      annotatedCtx.beginPath();
+
+      annotatedCtx.globalAlpha = 0.4;
+      annotatedCtx.fillStyle = "#000";
+      annotatedCtx.fillRect(rect.x, rect.y, rect.w, rect.h);
+      annotatedCtx.globalAlpha = 1;
+
+      annotatedCtx.lineWidth = 0.5;
+      annotatedCtx.strokeStyle =
+        (rect.name || "").indexOf("(?)") < 0 ? "#fff" : "yellow";
+      annotatedCtx.rect(rect.x, rect.y, rect.w, rect.h);
+      annotatedCtx.stroke();
+      if (
+        typeof rect.type !== "undefined" &&
+        typeof rect.count !== "undefined" &&
+        typeof rect.name !== "undefined"
+      ) {
+        annotatedCtx.font = "10px Arial";
+        annotatedCtx.fillStyle = "#fff";
+        annotatedCtx.fillText(
+          `${rect.count.toString()}x ${rect.name} ${rect.type}`,
+          rect.x + 3,
+          rect.y + 15,
+          rect.w - 3
+        );
+      }
+    });
+    // const clientWidth = this.clientWidth;
+    // console.log("Saving");
+    // zip.generateAsync({ type: "blob" }).then(function (content) {
+    //   saveAs(content, "champions_" + clientWidth + ".zip");
+    // });
+  }
+
+  computeRects() {
+    this.workCanvas.width = 10;
+    this.workCanvas.height = 10;
+
+    const offset = {
+      "1920": {
+        xStart: 7,
+        yStart: 6,
+        iconWidth: 201,
+        iconHeight: 246,
+        iconOffsetX: 231,
+        iconOffsetY: 375,
+      },
+      "1600": {
+        xStart: 5,
+        yStart: 7,
+        iconWidth: 168,
+        iconHeight: 206,
+        iconOffsetX: 192.54,
+        iconOffsetY: 312.54,
+      },
+      "1280": {
+        xStart: 6,
+        yStart: 7,
+        iconWidth: 134,
+        iconHeight: 163,
+        iconOffsetX: 154,
+        iconOffsetY: 250,
+      },
+      "1024": {
+        xStart: 6,
+        yStart: 6,
+        iconWidth: 107,
+        iconHeight: 131,
+        iconOffsetX: 123.25,
+        iconOffsetY: 200,
+      },
+    }[this.clientWidth];
+
+    let rects: Rect[] = [];
+    let x = offset.xStart;
+    let y = offset.yStart;
+
+    while (y + offset.iconHeight < this.canvas.height) {
+      if (x < this.canvas.width) {
+        rects.push({
+          cat: "coll_skin",
+          x,
+          y,
+          w: offset.iconWidth,
+          h: offset.iconHeight,
+        });
+        x += offset.iconOffsetX;
+      } else {
+        y += offset.iconOffsetY;
+        x = offset.xStart;
+      }
+    }
+    return rects;
   }
 }
