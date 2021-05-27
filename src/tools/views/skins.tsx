@@ -176,7 +176,7 @@ export default class Skins extends Capture {
         ...Array.from(
           this.workCanvas.getContext("2d").getImageData(0, 0, 10, 10)
             .data as Uint8ClampedArray
-        ).filter((v: number, i: number) => i % 4 == 0)
+        ).filter((v: number, i: number) => i % 4 === 0)
       ) > 50;
 
     while (y + offset.iconHeight < this.canvas.height) {
@@ -191,7 +191,7 @@ export default class Skins extends Capture {
         });
         x += offset.iconOffsetX;
       } else {
-        y += x == offset.xStart ? offset.lineHeight : offset.iconOffsetY;
+        y += x === offset.xStart ? offset.lineHeight : offset.iconOffsetY;
         x = offset.xStart;
       }
     }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./App.css";
 import loot from "./assets/loot-tab.jpg";
-import { scraper } from "./tools/scraper";
+import scraper from "./tools/scraper";
 import WelcomeText from "./components/WelcomeText";
 import ScraperAssistant from "./components/ScraperAssistant";
 import Debug from "./components/Debug";

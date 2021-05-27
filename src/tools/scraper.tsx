@@ -51,7 +51,7 @@ const scraper: Scraper = {
     };
 
     const scanningFinished = Object.values(info.progress).reduce(
-      (prev, curr) => prev && curr == "100%",
+      (prev, curr) => prev && curr === "100%",
       true
     );
 
@@ -71,8 +71,8 @@ const scraper: Scraper = {
 
     requestAnimationFrame(scraper.loop);
 
-    if (info.progress.loot == "100%") scraper.loot.recognize();
-    if (info.progress.loot == "100%") scraper.skins.recognize();
+    if (info.progress.loot === "100%") scraper.loot.recognize();
+    if (info.progress.loot === "100%") scraper.skins.recognize();
 
     if (scanningFinished) {
       if (typeof scraper.setImg1 === "function" && scraper.skins)
