@@ -20,6 +20,8 @@ Following steps will be executed:
     C. Ward, 
     D. Number, 
     E. Border
+    F. Collection champions
+    G. Collection skins
         1. Parse image training data
         2. Train the model
         3. Save the model
@@ -52,8 +54,8 @@ def read_jpeg(path):
     BGRA[:,:,3] = 255
     return BGRA
 
-def layer( image_a, image_b ):
-    return normal(image_a.astype(float), image_b.astype(float), 1.).astype(np.uint8)
+def layer( image_a, image_b, ratio=1.):
+    return normal(image_a.astype(float), image_b.astype(float), ratio).astype(np.uint8)
 
 def save_model(model, model_name):
     model.save                             (os.path.join("model_training","models",model_name,"model.h5"))
@@ -61,6 +63,9 @@ def save_model(model, model_name):
     model.save_weights                     (os.path.join("model_training","models",model_name,"model_weights_checkpoint","model_weights"))
     tfjs.converters.save_keras_model(model, os.path.join("public","models",model_name))
     
+def load_model(model_name):
+    return tf.keras.models.load_model(os.path.join("model_training","models",model_name,"model"));
+
 def progressbar(it, prefix="", size=60, file=sys.stdout):
     count = len(it)
     def show(j):
@@ -131,11 +136,11 @@ if input_task.lower() == "all" or input_task == "1":
             isLegacy = 1 if ward["isLegacy"] else 0
             export["wards"].append( (i, ward["name"], 640, isLegacy) )
 
-    path = os.path.join('public','lookup_table.json')
+    path = os.path.join("public","lookup_data","loot.json")
     with open(path, 'w') as json_save_file:
         json.dump(export, json_save_file)
     
-    print("-  Game data saved to: "+path)
+    print("-  Loot data saved to: "+path)
 
 
 
@@ -148,11 +153,11 @@ if input_task.lower() == "all" or input_task == "1":
 if input_task.lower() == "all" or input_task == "2":
     print("2. Game asset download has begun")
     
-    # Load up our lookup_table used for labels
-    if not os.path.isfile(os.path.join("public","lookup_table.json")):
+    # Load up our lookup_loot used for labels
+    if not os.path.isfile(os.path.join("public","lookup_data","loot.json")):
         exit("Game data file from step 1 not found. Exiting.")
-    with open(os.path.join("public","lookup_table.json")) as json_file:
-        lookup_table  = json.load(json_file)
+    with open(os.path.join("public","lookup_data","loot.json")) as json_file:
+        lookup_loot  = json.load(json_file)
 
     assets_folder = os.path.join("model_training","assets")
 
@@ -219,7 +224,7 @@ if input_task.lower() == "all" or input_task == "2":
     images = resp.read().splitlines()
 
     champ_ids = {}
-    for champion_data in lookup_table["champions"]:
+    for champion_data in lookup_loot["champions"]:
         whitelist = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
         champ = ''.join(filter(whitelist.__contains__, champion_data[1])).lower()
         champ_ids[champ] = champion_data[0][:-3]
@@ -231,20 +236,34 @@ if input_task.lower() == "all" or input_task == "2":
     intentionally_ignored_splashes = [ 
         # copies of 5005, 157001,24007 and 89004 (same splash art, chromas?)
         "5008.png", "5009.png", "5010.png", "5011.png", "5012.png",
-        "157005.png", "157006.png", "157007.png", "157008.png"
-        "24009.png", "24010.png", "24011.png"
-        "89005.png", "89006.png", "89007.png"
+        "157005.png", "157006.png", "157007.png", "157008.png",
+        "24009.png", "24010.png", "24011.png",
+        "89005.png", "89006.png", "89007.png",
 
         # Default version of the skin has limited edition border
         "235009_limited.png", "518011_limited.png", "92022_limited.png", 
+
+        # Versions of championship kha'zix with varying logos, not a real skin I think
+        "121013.png", "121014.png", "121015.png", "121017.png", "121018.png", "121022.png", "121023.png", "121024.png", "121025.png", "121028.png", "121030.png", "121031.png", "121035.png", "121037.png", "121041.png", "121042.png", "121043.png", "121046.png", "121047.png", "121048.png", "121051.png", "121053.png", "121054.png", "121059.png", 
+
+        # Seraphine appears under one icon which is downloaded extra below, 
+        # loading screen images of Seraphine don't appear in collection, hence ignored
+        "147001.png", "147001_limited.png", "147002.png", "147002_limited.png", "147003.png", "147003_limited.png", 
     ]
 
+    extra_assets_to_download = [
+        # ID, limited edition?, url
+        ("147001", False, "https://raw.communitydragon.org/pbe/plugins/rcp-be-lol-game-data/global/default/assets/characters/seraphine/skins/skin01/images/collection_card.jpg")
+    ]
 
     images = list(filter(lambda img: re.search('loadscreen.*\.png', str(img)) and str(img).startswith("b'game/ass") and not "/hud/" in str(img), images))
     images = list(map(lambda img: "https://raw.communitydragon.org/latest/game/" + str(img).split("game")[1][:-1], images))
     images_data = list(map(lambda img: re.sub('\.pie[^\.]*','',img), images))
     limited_edition = list(map(lambda img: re.search(r"_le[^a-z]",img), images_data))
     image_data = list(map(lambda img: re.sub('^.*\/([^\/]*)\/([^\/]*)load[^\/]*\.png',r'\1,\2', img), images_data))
+
+    lookup_data_collection_champions = []
+    lookup_data_collection_skins = []
 
     for i in progressbar(range(len(images)), "-  Downloading: ", 40):
         image = images[i]
@@ -259,10 +278,43 @@ if input_task.lower() == "all" or input_task == "2":
         # These intentionally ignored splashes were duplicates which would confuse the machine learning model as it's same images classified differently
         if re.search(r"^[0-9]*(_limited)?\.png$", filename) and filename not in intentionally_ignored_splashes and not filename.endswith("000_limited.png"):
             destination = os.path.join(os.path.join(assets_folder, "loading_screen_assets"), filename )
+
+            if skin_id == "000":
+                lookup_data_collection_champions.append(champ_id+skin_id)
+            else:
+                lookup_data_collection_skins.append([champ_id+skin_id,1 if limited_edition[i] else 0])
+
             if not os.path.isfile( destination ):
                 if not os.path.exists(destination.rsplit(os.path.sep,1)[0]):
                     os.makedirs(destination.rsplit(os.path.sep,1)[0])
                 urllib.request.urlretrieve(source, destination)
+
+    for extra_image in extra_assets_to_download:
+        id = extra_image[0]
+        is_limited = extra_image[1]
+        source = extra_image[2]
+
+        if id.endswith("000"):
+            lookup_data_collection_champions.append(id)
+        else:
+            lookup_data_collection_skins.append([id,1 if is_limited else 0])
+            
+        destination = os.path.join(os.path.join(assets_folder, "loading_screen_assets"), id+".png" )
+        if not os.path.isfile( destination ):
+            if not os.path.exists(destination.rsplit(os.path.sep,1)[0]):
+                os.makedirs(destination.rsplit(os.path.sep,1)[0])
+            urllib.request.urlretrieve(source, destination)
+
+
+    path = os.path.join("public","lookup_data","collection_champions.json")
+    with open(path, 'w') as json_save_file:
+        json.dump(lookup_data_collection_champions, json_save_file)
+        print("-  Collection champions lookup data saved to: "+path)
+        
+    path = os.path.join("public","lookup_data","collection_skins.json")
+    with open(path, 'w') as json_save_file:
+        json.dump(lookup_data_collection_skins, json_save_file)
+        print("-  Collection skins lookup data saved to: "+path)
     
     print("-  Game asset download complete!")
 
@@ -279,15 +331,15 @@ if input_task.lower() == "all" or input_task == "2":
 if input_task.lower() == "all" or input_task == "3": 
     print("3. Image generation has begun")
 
-    if not os.path.isfile(os.path.join("public","lookup_table.json")):
+    if not os.path.isfile(os.path.join("public","lookup_data","loot.json")):
         exit("Game data file from step 1 not found. Exiting.")
-    with open(os.path.join("public","lookup_table.json")) as json_file:
-        lookup_table  = json.load(json_file)
+    with open(os.path.join("public","lookup_data","loot.json")) as json_file:
+        lookup_loot = json.load(json_file)
     
     def generate_champion_and_skin_training_images( champion_image_path ):
         
         champion_id = champion_image_path.rsplit(os.path.sep,1)[1].split('.')[0]
-        champion_data = list(filter(lambda row: row[0] == champion_id, lookup_table["champions"]+lookup_table["skins"]))[0]
+        champion_data = list(filter(lambda row: row[0] == champion_id, lookup_loot["champions"]+lookup_loot["skins"]))[0]
         price = champion_data[2]
         is_legacy = champion_data[3] == 1
         asset_folder = "champions" if champion_id.endswith("000") else "skins"  
@@ -404,15 +456,15 @@ if input_task.lower() == "all" or input_task == "3":
     # Get champion and skins assets
     champions_and_skins = glob.glob(os.path.join("model_training","assets","champions_and_skins","*.jpg"))
 
-    # Generate training data if the lookup_table contains the ID
-    # If ID is missing in lookup table run "generate_lookup_table.py"
+    # Generate training data if the lookup_loot contains the ID
+    # If ID is missing in lookup table run "generate_lookup_loot.py"
     # If ID is still missing, this champion is very fresh as wikipedia doesn't know of him :)
     missing_ids = []
 
     for i in progressbar(range(len(champions_and_skins)), "-  Generating champion/skin images: ", 40):
         image = champions_and_skins[i]
         champion_id = image.rsplit(os.path.sep,1)[1].split('.')[0]
-        champion_data = list(filter(lambda row: row[0] == champion_id, lookup_table["champions"]+lookup_table["skins"]))
+        champion_data = list(filter(lambda row: row[0] == champion_id, lookup_loot["champions"]+lookup_loot["skins"]))
         if len(champion_data) > 0:
             generate_champion_and_skin_training_images(image)
         else:
@@ -429,15 +481,15 @@ if input_task.lower() == "all" or input_task == "3":
     ward_skins = glob.glob(os.path.join("model_training","assets","ward_skins","*.png"))
     ward_skins = list(filter(lambda ward: "shadow" not in ward, ward_skins))
 
-    # Generate training data if the lookup_table contains the ID
-    # If ID is missing in lookup table run "generate_lookup_table.py"
+    # Generate training data if the lookup_loot contains the ID
+    # If ID is missing in lookup table run action 1 again.
     # If ID is still missing, this champion is very fresh as wikipedia doesn't know of him :)
     missing_ids = []
 
     for i in progressbar(range(len(ward_skins)), "-  Generating ward skin images: ", 40):
         image = ward_skins[i]
         ward_id = image.rsplit("_",1)[1].split(".")[0]
-        ward_data = list(filter(lambda row: row[0] == int(ward_id), lookup_table["wards"]))
+        ward_data = list(filter(lambda row: row[0] == int(ward_id), lookup_loot["wards"]))
         if len(ward_data) > 0:
             generate_ward_skin_training_images(image)
         else:
@@ -449,6 +501,81 @@ if input_task.lower() == "all" or input_task == "3":
         print("!   IDs with missing data: "+",".join(map(lambda x: str(x), missing_ids)))
         if input("Would you like to continue? (y/n)").lower() == "n":
             exit()
+
+    def generate_collection_champion_training_images( champion_image_path ):
+            
+        champion_id = champion_image_path.rsplit(os.path.sep,1)[1].split('.')[0]
+        
+        if len(glob.glob(os.path.join("model_training","training_data","collection_champions",champion_id,"*.png"))) == 49:
+            return
+        
+        image = read_png(champion_image_path)[0:377,:]
+
+        bg = np.zeros((image.shape[0], image.shape[1], image.shape[2]), np.uint8)
+        bg[:] = (22, 13, 1, 255)
+
+        image = layer(bg, image, 0.8)    
+        image = cv2.copyMakeBorder(image, 5, 5, 5, 5, cv2.BORDER_CONSTANT,value=(30,35,40,255))
+        image = cv2.cvtColor(image, cv2.COLOR_BGRA2GRAY)
+
+        for x in range(0, 13, 2):
+            for y in range(0, 13, 2):
+                crop = image[0+y:image.shape[0]-10+y, 0+x:image.shape[1]-10+x]              
+                resized_image = cv2.resize(crop, (28,28), interpolation = cv2.INTER_AREA)
+                        
+                destination = os.path.join("model_training","training_data","collection_champions",champion_id,f'x{x}_y{y}.png')
+
+                if not os.path.exists(destination.rsplit(os.path.sep,1)[0]):
+                    os.makedirs(destination.rsplit(os.path.sep,1)[0])
+
+                cv2.imwrite(destination, resized_image)
+
+    coll_champion = glob.glob(os.path.join("model_training","assets","loading_screen_assets","*.png"))
+    coll_champion = list(filter(lambda path: path.endswith("000.png"), coll_champion))
+
+
+    for i in progressbar(range(len(coll_champion)), "-  Generating collection champion images: ", 40):
+        path = coll_champion[i]
+        generate_collection_champion_training_images(path)
+
+
+
+    def generate_collection_skin_training_images( skin_image_path ):    
+        skin_id = skin_image_path.rsplit(os.path.sep,1)[1].split('.')[0]
+
+        if len(glob.glob(os.path.join("model_training","training_data","collection_skins",skin_id,"*.png"))) == 49:
+            return
+        
+        image = read_png(skin_image_path)[18:409,14:291]
+
+        bg = np.zeros((image.shape[0], image.shape[1], image.shape[2]), np.uint8)
+        bg[:] = (22, 13, 1, 255)
+
+        image = layer(bg, image, 0.8)    
+        image = cv2.copyMakeBorder(image, 5, 5, 5, 5, cv2.BORDER_CONSTANT,value=(30,35,40,255))
+        image = cv2.cvtColor(image, cv2.COLOR_BGRA2GRAY)
+
+        for x in range(0, 13, 2):
+            for y in range(0, 13, 2):
+                crop = image[0+y:image.shape[0]-10+y, 0+x:image.shape[1]-10+x]              
+                resized_image = cv2.resize(crop, (28,28), interpolation = cv2.INTER_AREA)
+                        
+                destination = os.path.join("model_training","training_data","collection_skins",skin_id,f'x{x}_y{y}.png')
+
+                if not os.path.exists(destination.rsplit(os.path.sep,1)[0]):
+                    os.makedirs(destination.rsplit(os.path.sep,1)[0])
+
+                cv2.imwrite(destination, resized_image)
+
+
+    coll_skin = glob.glob(os.path.join("model_training","assets","loading_screen_assets","*.png"))
+    coll_skin = list(filter(lambda path: not path.endswith("000.png"), coll_skin))
+     
+    for i in progressbar(range(len(coll_skin)), "-  Generating collection skin images: ", 40):
+        path = coll_skin[i]
+        generate_collection_skin_training_images(path)
+
+
     print("-  Image generation complete")
 
 
@@ -458,16 +585,16 @@ if input_task.lower() == "all" or input_task == "3":
 # 4. Training each of the models
 if input_task.lower() == "all" or input_task.startswith("4"):
 
-    if not os.path.isfile(os.path.join("public","lookup_table.json")):
+    if not os.path.isfile(os.path.join("public","lookup_data","loot.json")):
         exit("Game data file from step 1 not found. Exiting.")
-    with open(os.path.join("public","lookup_table.json")) as json_file:
-        lookup_table  = json.load(json_file)
+    with open(os.path.join("public","lookup_data","loot.json")) as json_file:
+        lookup_loot  = json.load(json_file)
 
 
 
 
     # 4A. Champion
-    if input_task.lower() == "all" or input_task == "4A" or input_task == "4":
+    if input_task.lower() == "all" or input_task in ("4A","4"):
         print("4. A. Champion model training has begun")
         champion_train_image_paths = glob.glob( os.path.join("model_training","training_data","champions","**","*.png") )
 
@@ -479,8 +606,8 @@ if input_task.lower() == "all" or input_task.startswith("4"):
             image = champion_train_image_paths[i]
             asset_id = image.rsplit(os.path.sep, 2)[1]
             
-            for row_index in range(len(lookup_table["champions"])):
-                if lookup_table["champions"][row_index][0] == asset_id:
+            for row_index in range(len(lookup_loot["champions"])):
+                if lookup_loot["champions"][row_index][0] == asset_id:
                     label = row_index
 
             image = read_png(image)
@@ -494,7 +621,7 @@ if input_task.lower() == "all" or input_task.startswith("4"):
 
         champion_model = tf.keras.Sequential([
             tf.keras.layers.Flatten(input_shape=(28, 28)),
-            tf.keras.layers.Dense(len(lookup_table["champions"]))
+            tf.keras.layers.Dense(len(lookup_loot["champions"]))
         ])
 
         champion_model.compile(optimizer='adam',
@@ -516,7 +643,7 @@ if input_task.lower() == "all" or input_task.startswith("4"):
 
 
     # 4B. Skin
-    if input_task.lower() == "all" or input_task == "4B" or input_task == "4":
+    if input_task.lower() == "all" or input_task in ("4B","4"):
         print("4. B. Skin model training has begun")
         skin_train_image_paths = glob.glob( os.path.join("model_training","training_data","skins","**","*.png") )
 
@@ -527,8 +654,8 @@ if input_task.lower() == "all" or input_task.startswith("4"):
             image = skin_train_image_paths[i]
             asset_id = image.rsplit(os.path.sep, 2)[1]
             
-            for row_index in range(len(lookup_table["skins"])):
-                if lookup_table["skins"][row_index][0] == asset_id:
+            for row_index in range(len(lookup_loot["skins"])):
+                if lookup_loot["skins"][row_index][0] == asset_id:
                     label = row_index
 
             image = read_png(image)
@@ -542,7 +669,7 @@ if input_task.lower() == "all" or input_task.startswith("4"):
 
         skin_model = tf.keras.Sequential([
             tf.keras.layers.Flatten(input_shape=(28, 28)),
-            tf.keras.layers.Dense(len(lookup_table["skins"]))
+            tf.keras.layers.Dense(len(lookup_loot["skins"]))
         ])
 
         skin_model.compile(optimizer='adam',
@@ -563,7 +690,7 @@ if input_task.lower() == "all" or input_task.startswith("4"):
 
 
     # 4C. Ward
-    if input_task.lower() == "all" or input_task == "4C" or input_task == "4":
+    if input_task.lower() == "all" or input_task in ("4C","4"):
         print("4. C. Ward model training has begun")
         ward_train_image_paths = glob.glob( os.path.join("model_training","training_data","wards","**","*.png") )
 
@@ -585,7 +712,7 @@ if input_task.lower() == "all" or input_task.startswith("4"):
 
         ward_model = tf.keras.Sequential([
             tf.keras.layers.Flatten(input_shape=(28, 28)),
-            tf.keras.layers.Dense(len(lookup_table["wards"]))
+            tf.keras.layers.Dense(len(lookup_loot["wards"]))
         ])
 
         ward_model.compile(optimizer='adam',
@@ -607,7 +734,7 @@ if input_task.lower() == "all" or input_task.startswith("4"):
 
 
     # 4D. Number
-    if input_task.lower() == "all" or input_task == "4D" or input_task == "4":
+    if input_task.lower() == "all" or input_task in ("4D","4"):
         print("4. D. Number model training has begun")
         number_train_labels = []
         number_train_images = []
@@ -650,9 +777,10 @@ if input_task.lower() == "all" or input_task.startswith("4"):
 
 
     # 4E. Border
-    if input_task.lower() == "all" or input_task == "4E" or input_task == "4":
+    if input_task.lower() == "all" or  input_task in ("4E","4"):
         print("4. E. Border model training has begun")
-        shard_permanent_image_paths = glob.glob( os.path.join("model_training","training_data","**","*.png") )
+        shard_permanent_image_paths = glob.glob( os.path.join("model_training","training_data","**","**","*.png") )
+        shard_permanent_image_paths = list(filter(lambda path: "shard" in path or "permanent" in path, shard_permanent_image_paths))
 
         shard_permanent_train_labels = []
         shard_permanent_train_images = []
@@ -688,6 +816,120 @@ if input_task.lower() == "all" or input_task.startswith("4"):
         del shard_permanent_train_labels
         del shard_permanent_train_images
         print("-     Border model training is complete!")
+
+
+
+
+
+    # 4F. Collection champions
+    if input_task.lower() == "all" or  input_task in ("4F","4"):
+        
+        # Load up our lookup_coll_champions used for labels
+        if not os.path.isfile(os.path.join("public","lookup_data","collection_champions.json")):
+            exit("Lookup data file (collection_champions.json) from step 2 not found. Exiting.")
+        with open(os.path.join("public","lookup_data","collection_champions.json")) as json_file:
+            lookup_coll_champions  = json.load(json_file)
+            
+        print("4. F. Collection champions model training has begun")
+        coll_champions_image_paths = glob.glob( os.path.join("model_training","training_data","collection_champions","**","*.png") )
+
+        coll_champions_train_labels = []
+        coll_champions_train_images = []
+
+        for i in progressbar(range(len(coll_champions_image_paths)), "-     Parsing image data: ", 40):
+
+            image = coll_champions_image_paths[i]
+            champion_id = image.rsplit(os.path.sep,2)[1]
+                       
+            label = lookup_coll_champions.index(champion_id)
+            image = read_png(image) / 255
+
+            coll_champions_train_labels.append(label)
+            coll_champions_train_images.append(image)
+
+        coll_champions_train_images = np.array(coll_champions_train_images)
+        coll_champions_train_labels = np.array(coll_champions_train_labels)
+
+        model_coll_champions = tf.keras.Sequential([
+            tf.keras.layers.Flatten(input_shape=(28, 28)),
+            tf.keras.layers.Dense(len(lookup_coll_champions))
+        ])
+
+        model_coll_champions.compile(optimizer='adam',
+            loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+            metrics=['accuracy'])
+            
+        model_coll_champions.fit( coll_champions_train_images, coll_champions_train_labels, epochs=500)
+
+        model_coll_champions.summary()
+        save_model(model_coll_champions, "coll_champions")
+        
+        del coll_champions_image_paths
+        del coll_champions_train_labels
+        del coll_champions_train_images
+        print("-     Collection champions model training is complete!")
+
+
+
+
+
+    # 4G. Collection skins
+    if input_task.lower() == "all" or  input_task in ("4G","4"):
+        
+        # Load up our lookup_coll_skins used for labels
+        if not os.path.isfile(os.path.join("public","lookup_data","collection_skins.json")):
+            exit("Lookup data file (collection_skins.json) from step 2 not found. Exiting.")
+        with open(os.path.join("public","lookup_data","collection_skins.json")) as json_file:
+            lookup_coll_skins  = json.load(json_file)
+            
+        print("4. G. Collection skins model training has begun")
+        coll_skins_image_paths = glob.glob( os.path.join("model_training","training_data","collection_skins","**","*.png") )
+
+        coll_skins_train_labels = []
+        coll_skins_train_images = []
+
+        for i in progressbar(range(len(coll_skins_image_paths)), "-     Parsing image data: ", 40):
+
+            image = coll_skins_image_paths[i]
+            is_limited = "_limited" in image
+            skin_id = image.rsplit(os.path.sep,2)[1] if not is_limited else image.rsplit(os.path.sep,2)[1].split("_")[0]
+                       
+            label = lookup_coll_skins.index([skin_id, 1 if is_limited else 0])
+            image = read_png(image) / 255
+
+            coll_skins_train_labels.append(label)
+            coll_skins_train_images.append(image)
+
+        coll_skins_train_images = np.array(coll_skins_train_images)
+        coll_skins_train_labels = np.array(coll_skins_train_labels)
+
+        if os.path.isdir(os.path.join("model_training","models","coll_skins","model")):
+            model_coll_skins = load_model("coll_skins")
+        else:
+            model_coll_skins = tf.keras.Sequential([
+                tf.keras.layers.Flatten(input_shape=(28, 28)),
+                tf.keras.layers.Dense(len(lookup_coll_skins))
+            ])
+
+            model_coll_skins.compile(optimizer='adam',
+                loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+                metrics=['accuracy'])
+                
+        # while True:
+        #     model_coll_skins.fit( coll_skins_train_images, coll_skins_train_labels, epochs=10)
+
+        #     model_coll_skins.summary()
+        #     save_model(model_coll_skins, "coll_skins")
+        
+        model_coll_skins.fit( coll_skins_train_images, coll_skins_train_labels, epochs=300)
+
+        model_coll_skins.summary()
+        save_model(model_coll_skins, "coll_skins")
+        
+        del coll_skins_image_paths
+        del coll_skins_train_labels
+        del coll_skins_train_images
+        print("-     Collection skins model training is complete!")
 
 
 input("Completed. Press Enter key to exit.")
