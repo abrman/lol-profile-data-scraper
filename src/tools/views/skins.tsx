@@ -7,30 +7,17 @@ type Rect = {
   y: number;
   w: number;
   h: number;
+  canvas: HTMLCanvasElement;
   cat?: string;
   type?: string;
   count?: number;
   name?: string;
+  data?: any;
 };
 
-type Models = {
-  champions: tf.LayersModel;
-  skins: tf.LayersModel;
-  wards: tf.LayersModel;
-  numbers: tf.LayersModel;
-  shard_permanent: tf.LayersModel;
-};
+type LootLabels = [id: string, name: string, price: number, legacy: number][];
 
-type LookupLabels =
-  | [id: number, name: string, price: number, legacy: number][]
-  | string[];
-
-type LookupTable = {
-  champions: LookupLabels;
-  skins: LookupLabels;
-  wards: LookupLabels;
-  [x: string]: any;
-};
+type LookupTable = [string, any][];
 
 export default class Skins extends Capture {
   constructor(
@@ -68,49 +55,130 @@ export default class Skins extends Capture {
       },
     };
     super(video, options, checkFunction);
+
+    this.prepareClassificationAssets();
   }
 
   lookupTable: LookupTable;
-  models: Models;
+  skinsCollectionModel: tf.LayersModel;
   classifiedRects: Rect[];
-  annotatedCanvas: HTMLCanvasElement;
+
+  async prepareClassificationAssets() {
+    let [lookupTableLoot, lookupTableSkins, skinsCollectionModel] =
+      await Promise.all([
+        fetch("/lookup_data/loot.json").then((res) => res.json()),
+        fetch("/lookup_data/collection_skins.json").then((res) => res.json()),
+        tf.loadLayersModel("/models/coll_skins/model.json"),
+      ]);
+
+    this.lookupTable = lookupTableSkins.map(
+      (v: [id: string, is_limited_edition: number]) => {
+        return [
+          (v[1] === 1 ? "Limited edition " : "") +
+            (lookupTableLoot["skins"] as LootLabels).filter(
+              (l) => l[0] === v[0]
+            )[0][1],
+          v,
+        ];
+      }
+    );
+
+    this.skinsCollectionModel = skinsCollectionModel;
+    this.loaded = true;
+  }
+
+  classifyRects(rects: Rect[]) {
+    rects.forEach((rect: Rect, i: number) => {
+      const prediction = this.getPredictionFromRect(
+        rect,
+        this.skinsCollectionModel,
+        this.lookupTable
+      );
+      if (typeof prediction !== "undefined") {
+        rects[i] = {
+          ...rects[i],
+          type: "collection_skin",
+          count: 1,
+          name: prediction[0],
+          data: prediction[1],
+        };
+      }
+    });
+    return rects;
+  }
+
+  getPredictionFromRect(
+    rect: Rect,
+    model: tf.LayersModel,
+    labels: LookupTable
+  ): [string, any] {
+    if (!this.complete) return;
+
+    this.workCanvas.width = 28;
+    this.workCanvas.height = 28;
+
+    const lightValues = [];
+    this.workCanvas
+      .getContext("2d")
+      ?.drawImage(rect.canvas, rect.x, rect.y, rect.w, rect.h, 0, 0, 28, 28);
+    let imageData = this.workCanvas
+      .getContext("2d")
+      ?.getImageData(0, 0, 28, 28);
+    let pixels = imageData?.data;
+    if (typeof pixels !== "undefined") {
+      for (var j = 0; j < pixels.length; j += 4) {
+        let lightness =
+          pixels[j] * 0.299 + pixels[j + 1] * 0.587 + pixels[j + 2] * 0.114;
+        lightValues.push(lightness / 255);
+      }
+    }
+    const tensor = tf.tensor(lightValues, [1, 28, 28]);
+
+    const predictions = (model.predict(tensor) as tf.Tensor).dataSync();
+
+    const bestPrediction =
+      labels[predictions.indexOf(Math.max(...Array.from(predictions)))];
+
+    predictions.sort((a, b) => b - a);
+    if (predictions[0] - predictions[1] < 10) {
+      return ["?" + bestPrediction[0], bestPrediction[1]];
+    }
+    return bestPrediction;
+  }
 
   recognize() {
+    super.recognize();
     if (this.classifiedRects) return this.classifiedRects;
 
     const rects = this.computeRects();
-    this.classifiedRects = rects; //this.classifyRects(rects);
+    this.classifiedRects = this.classifyRects(rects);
 
-    this.annotatedCanvas = document.createElement("canvas");
-    const annotatedCtx = this.annotatedCanvas.getContext("2d");
-    this.annotatedCanvas.width = this.canvas.width;
-    this.annotatedCanvas.height = this.canvas.height;
+    this.cropCanvasesByRects(this.classifiedRects);
+  }
 
-    annotatedCtx.drawImage(this.canvas, 0, 0);
+  annotateImages() {
+    super.annotateImages();
+    if (this.classifiedRects == null) return;
 
     this.classifiedRects.forEach((rect: Rect, i: number) => {
-      if (annotatedCtx === null) return;
-      annotatedCtx.beginPath();
+      console.log(rect);
+      const ctx = rect.canvas.getContext("2d");
+      ctx.beginPath();
 
-      annotatedCtx.globalAlpha = 0.6;
-      annotatedCtx.fillStyle = "#000";
-      annotatedCtx.fillRect(rect.x, rect.y, rect.w, rect.h);
-      annotatedCtx.globalAlpha = 1;
+      ctx.globalAlpha = 0.6;
+      ctx.fillStyle = "#000";
+      ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+      ctx.globalAlpha = 1;
 
-      annotatedCtx.lineWidth = 2;
-      annotatedCtx.strokeStyle =
-        (rect.name || "").indexOf("(?)") < 0 ? "#fff" : "yellow";
-      annotatedCtx.rect(rect.x, rect.y, rect.w, rect.h);
-      annotatedCtx.stroke();
-      if (
-        typeof rect.type !== "undefined" &&
-        typeof rect.count !== "undefined" &&
-        typeof rect.name !== "undefined"
-      ) {
-        annotatedCtx.font = "10px Arial";
-        annotatedCtx.fillStyle = "#fff";
-        annotatedCtx.fillText(
-          `${rect.count.toString()}x ${rect.name} ${rect.type}`,
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = (rect.name || " ")[0] === "?" ? "yellow" : "#fff";
+      ctx.rect(rect.x, rect.y, rect.w, rect.h);
+      ctx.stroke();
+      if (typeof rect.name !== "undefined") {
+        ctx.font = "10px Arial";
+        ctx.fillStyle = "#fff";
+        ctx.fillText(
+          rect.name[0] === "?" ? rect.name.slice(1) : rect.name,
           rect.x + 3,
           rect.y + 15,
           rect.w - 3
@@ -120,8 +188,8 @@ export default class Skins extends Capture {
   }
 
   computeRects() {
-    this.workCanvas.width = 10;
-    this.workCanvas.height = 10;
+    this.workCanvas.width = 15;
+    this.workCanvas.height = 15;
 
     const offset = {
       "1920": {
@@ -157,32 +225,51 @@ export default class Skins extends Capture {
         iconWidth: 91,
         iconHeight: 130,
         iconOffsetX: 123,
-        iconOffsetY: 180,
-        lineHeight: 42,
+        iconOffsetY: 179.2,
+        lineHeight: 43.3,
       },
     }[this.clientWidth];
 
     let rects: Rect[] = [];
     let x = offset.xStart;
     let y = offset.yStart;
+    let canvasIndex = 0;
 
     const drawCheckSquare = () =>
       this.workCanvas
         .getContext("2d")
-        .drawImage(this.canvas, x - 10, y - 10, 10, 10, 0, 0, 10, 10);
+        .drawImage(
+          this.canvasList[canvasIndex],
+          x - 15,
+          y - 15,
+          15,
+          15,
+          0,
+          0,
+          15,
+          15
+        );
 
     const isIcon = () =>
       Math.max(
         ...Array.from(
-          this.workCanvas.getContext("2d").getImageData(0, 0, 10, 10)
+          this.workCanvas.getContext("2d").getImageData(0, 0, 15, 15)
             .data as Uint8ClampedArray
         ).filter((v: number, i: number) => i % 4 === 0)
-      ) > 50;
+      ) > 30;
 
-    while (y + offset.iconHeight < this.canvas.height) {
+    while (
+      y + offset.iconHeight < this.canvasList[canvasIndex].height &&
+      canvasIndex < this.canvasList.length
+    ) {
+      if (y > 30000) {
+        y -= 30000;
+        canvasIndex++;
+      }
       drawCheckSquare();
-      if (x < this.canvas.width && isIcon()) {
+      if (x < this.canvasList[canvasIndex].width && isIcon()) {
         rects.push({
+          canvas: this.canvasList[canvasIndex],
           cat: "coll_skin",
           x,
           y,

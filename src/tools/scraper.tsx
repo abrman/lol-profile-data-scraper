@@ -15,6 +15,7 @@ interface Scraper {
   videoWidth: number;
   videoHeight: number;
   model: tf.LayersModel | undefined;
+  download: () => void;
   [x: string]: any;
 }
 
@@ -66,60 +67,80 @@ const scraper: Scraper = {
           <br />
           Champions: {info.progress.champions}
         </p>
-        {scanningFinished && "temp button :)"}
+        {scanningFinished && "Scanning is finished :)"}
+        <button onClick={() => scraper.download()}>Download ZIP</button>
       </>
     );
 
-    if (info.progress.loot === "100%") {
-      scraper.loot.recognize();
-      scraper.setImg1(scraper.loot.annotatedCanvas.toDataURL());
-      scraper.setImg1 = null;
-    }
-    if (info.progress.skins === "100%") {
-      scraper.skins.recognize();
-      scraper.setImg2(scraper.skins.annotatedCanvas.toDataURL());
-      scraper.setImg2 = null;
-    }
-    if (info.progress.champions === "100%") {
-      scraper.champions.recognize();
-      scraper.setImg3(scraper.champions.annotatedCanvas.toDataURL());
-      scraper.setImg3 = null;
-    }
+    // if (info.progress.loot === "100%") {
+    //   scraper.loot.recognize();
+    //   if (typeof scraper.setImg1 == "function" && scraper.loot.canvasList[0])
+    //     scraper.setImg1(scraper.loot.canvasList[0].toDataURL());
+    //   scraper.setImg1 = null;
+    //   if (typeof scraper.setImg2 == "function" && scraper.loot.canvasList[1])
+    //     scraper.setImg2(scraper.loot.canvasList[1].toDataURL());
+    //   scraper.setImg2 = null;
+    //   if (typeof scraper.setImg3 == "function" && scraper.loot.canvasList[2])
+    //     scraper.setImg3(scraper.loot.canvasList[2].toDataURL());
+    //   scraper.setImg3 = null;
+    //   if (typeof scraper.setImg4 == "function" && scraper.loot.canvasList[3])
+    //     scraper.setImg4(scraper.loot.canvasList[3].toDataURL());
+    //   scraper.setImg4 = null;
+    //   if (typeof scraper.setImg5 == "function" && scraper.loot.canvasList[4])
+    //     scraper.setImg5(scraper.loot.canvasList[4].toDataURL());
+    //   scraper.setImg5 = null;
+    //   if (typeof scraper.setImg6 == "function" && scraper.loot.canvasList[5])
+    //     scraper.setImg6(scraper.loot.canvasList[5].toDataURL());
+    //   scraper.setImg6 = null;
+    // }
 
     requestAnimationFrame(scraper.loop);
   },
 
-  async init() {
-    if (this.initiated) return;
-    this.initiated = true;
+  download() {
+    const zip = new JSZip();
+    const views = [
+      ["skins", this.skins],
+      ["loot", this.loot],
+      ["champions", this.champions],
+    ];
 
-    const [lookupTable, champions, skins, wards, numbers, shard_permanent] =
-      await Promise.all([
-        fetch("/lookup_table.json"),
-        tf.loadLayersModel("/models/champions/model.json"),
-        tf.loadLayersModel("/models/skins/model.json"),
-        tf.loadLayersModel("/models/wards/model.json"),
-        tf.loadLayersModel("/models/numbers/model.json"),
-        tf.loadLayersModel("/models/shard_permanent/model.json"),
-      ]);
+    views.forEach(([viewName, view]) => {
+      view.recognize();
+      view.annotateImages();
 
-    await lookupTable.text().then((data) => {
-      scraper.lookupTable = JSON.parse(data);
-      scraper.lookupTableLabels = data.match(/(?<=")([^"]+)(?=":)/g);
+      view.canvasList.forEach((canvas: HTMLCanvasElement, i: number) => {
+        if (canvas.height < 10) return;
+        const index = view.canvasList.length > 1 ? `_${i}` : "";
+        zip.file(
+          `${viewName}_annotated_${index}.png`,
+          canvas.toDataURL().split("base64,")[1],
+          {
+            base64: true,
+          }
+        );
+      });
+
+      view.rawCanvasList.forEach((canvas: HTMLCanvasElement, i: number) => {
+        if (canvas.height < 10) return;
+        const index = view.canvasList.length > 1 ? `_${i}` : "";
+        zip.file(
+          `${viewName}_original_${index}.png`,
+          canvas.toDataURL().split("base64,")[1],
+          {
+            base64: true,
+          }
+        );
+      });
     });
 
-    scraper.models = {
-      champions,
-      skins,
-      wards,
-      numbers,
-      shard_permanent,
-    };
-
-    scraper.ready = true;
+    zip.generateAsync({ type: "blob" }).then(function (content) {
+      saveAs(content, "account_data.zip");
+    });
   },
 
   startCapture(callback: () => void) {
+    (window as any).scraper = scraper;
     const currView = () => interfaceManager.currentInterface(this.videoElement);
 
     mediaStreamManager.startCapture(() => {

@@ -1,7 +1,5 @@
 import Capture from "../Capture";
 import * as tf from "@tensorflow/tfjs";
-// import JSZip from "jszip";
-// import { saveAs } from "file-saver";
 
 type Color = [r: number, g: number, b: number];
 type Rect = {
@@ -9,30 +7,17 @@ type Rect = {
   y: number;
   w: number;
   h: number;
+  canvas: HTMLCanvasElement;
   cat?: string;
   type?: string;
   count?: number;
   name?: string;
+  data?: any;
 };
 
-type Models = {
-  champions: tf.LayersModel;
-  skins: tf.LayersModel;
-  wards: tf.LayersModel;
-  numbers: tf.LayersModel;
-  shard_permanent: tf.LayersModel;
-};
+type LootLabels = [id: string, name: string, price: number, legacy: number][];
 
-type LookupLabels =
-  | [id: number, name: string, price: number, legacy: number][]
-  | string[];
-
-type LookupTable = {
-  champions: LookupLabels;
-  skins: LookupLabels;
-  wards: LookupLabels;
-  [x: string]: any;
-};
+type LookupTable = string[];
 
 export default class Champions extends Capture {
   constructor(
@@ -71,49 +56,26 @@ export default class Champions extends Capture {
       },
     };
     super(video, options, checkFunction);
+
+    this.prepareClassificationAssets();
   }
 
-  lookupTable: LookupTable;
-  models: Models;
-  classifiedRects: Rect[];
-  annotatedCanvas: HTMLCanvasElement;
-
   recognize() {
+    super.recognize();
     if (this.classifiedRects) return this.classifiedRects;
 
     const rects = this.computeRects();
-    this.classifiedRects = rects; //this.classifyRects(rects);
+    this.classifiedRects = this.classifyRects(rects);
 
-    this.annotatedCanvas = document.createElement("canvas");
-    const annotatedCtx = this.annotatedCanvas.getContext("2d");
-    this.annotatedCanvas.width = this.canvas.width;
-    this.annotatedCanvas.height = this.canvas.height;
+    this.cropCanvasesByRects(this.classifiedRects);
+  }
 
-    annotatedCtx.drawImage(this.canvas, 0, 0);
-
-    // var zip = new JSZip();
+  annotateImages() {
+    super.annotateImages();
+    if (this.classifiedRects == null) return;
 
     this.classifiedRects.forEach((rect: Rect, i: number) => {
-      // const c = document.createElement("canvas").getContext("2d");
-      // if (c != null) {
-      //   c.canvas.width = rect.w;
-      //   c.canvas.height = rect.h;
-      //   c.drawImage(
-      //     this.canvas,
-      //     rect.x,
-      //     rect.y,
-      //     rect.w,
-      //     rect.h,
-      //     0,
-      //     0,
-      //     rect.w,
-      //     rect.h
-      //   );
-      //   console.log(`Zipping: skin_${i}.png`);
-      //   zip.file(`skin_${i}.png`, c.canvas.toDataURL().split("base64,")[1], {
-      //     base64: true,
-      //   });
-      // }
+      const annotatedCtx = rect.canvas.getContext("2d");
 
       annotatedCtx.beginPath();
 
@@ -134,10 +96,29 @@ export default class Champions extends Capture {
       ) {
         annotatedCtx.font = "10px Arial";
         annotatedCtx.fillStyle = "#fff";
+        annotatedCtx.fillText(rect.name, rect.x + 3, rect.y + 15, rect.w - 3);
         annotatedCtx.fillText(
-          `${rect.count.toString()}x ${rect.name} ${rect.type}`,
+          "id: " + rect.data.id,
           rect.x + 3,
-          rect.y + 15,
+          rect.y + 30,
+          rect.w - 3
+        );
+        annotatedCtx.fillText(
+          "owned: " + rect.data.owned,
+          rect.x + 3,
+          rect.y + 45,
+          rect.w - 3
+        );
+        annotatedCtx.fillText(
+          "mastery: " + rect.data.mastery,
+          rect.x + 3,
+          rect.y + 60,
+          rect.w - 3
+        );
+        annotatedCtx.fillText(
+          "chest available: " + rect.data.chestAvailable,
+          rect.x + 3,
+          rect.y + 75,
           rect.w - 3
         );
       }
@@ -147,6 +128,228 @@ export default class Champions extends Capture {
     // zip.generateAsync({ type: "blob" }).then(function (content) {
     //   saveAs(content, "champions_" + clientWidth + ".zip");
     // });
+  }
+
+  lookupTable: LookupTable;
+  championCollectionModel: tf.LayersModel;
+  classifiedRects: Rect[];
+
+  async prepareClassificationAssets() {
+    let [lookupTableLoot, lookupTableChampions, championCollectionModel] =
+      await Promise.all([
+        fetch("/lookup_data/loot.json").then((res) => res.json()),
+        fetch("/lookup_data/collection_champions.json").then((res) =>
+          res.json()
+        ),
+        tf.loadLayersModel("/models/coll_champions/model.json"),
+      ]);
+
+    this.lookupTable = lookupTableChampions.map((v: string) => {
+      return [
+        (lookupTableLoot["champions"] as LootLabels).filter(
+          (l) => l[0] === v
+        )[0][1],
+        v,
+      ];
+    });
+
+    this.championCollectionModel = championCollectionModel;
+    this.loaded = true;
+  }
+
+  classifyRects(rects: Rect[]) {
+    const isViewingUnowned = this.isViewingUnowned();
+
+    rects.forEach((rect: Rect, i: number) => {
+      const prediction = this.getPredictionFromRect(
+        rect,
+        this.championCollectionModel,
+        this.lookupTable
+      );
+      if (typeof prediction !== "undefined") {
+        const ownership = isViewingUnowned
+          ? this.checkOwnershipFromRect(rect)
+          : true;
+        rects[i] = {
+          ...rects[i],
+          type: "collection_champion",
+          count: 1,
+          name: prediction[0],
+          data: {
+            id: prediction[1],
+            owned: ownership,
+            mastery: ownership ? this.checkMasteryFromRect(rect) : 0,
+            chestAvailable: ownership ? this.checkChestAvailable(rect) : false,
+          },
+        };
+      }
+    });
+    return rects;
+  }
+
+  getPredictionFromRect(
+    rect: Rect,
+    model: tf.LayersModel,
+    labels: LookupTable
+  ): string {
+    if (!this.complete) return;
+
+    this.workCanvas.width = 28;
+    this.workCanvas.height = 28;
+
+    const lightValues = [];
+    this.workCanvas
+      .getContext("2d")
+      ?.drawImage(this.canvas, rect.x, rect.y, rect.w, rect.h, 0, 0, 28, 28);
+    let imageData = this.workCanvas
+      .getContext("2d")
+      ?.getImageData(0, 0, 28, 28);
+    let pixels = imageData?.data;
+    if (typeof pixels !== "undefined") {
+      for (var j = 0; j < pixels.length; j += 4) {
+        let lightness =
+          pixels[j] * 0.299 + pixels[j + 1] * 0.587 + pixels[j + 2] * 0.114;
+        lightValues.push(lightness / 255);
+      }
+    }
+    const tensor = tf.tensor(lightValues, [1, 28, 28]);
+
+    const predictions = (model.predict(tensor) as tf.Tensor).dataSync();
+
+    const bestPrediction =
+      labels[predictions.indexOf(Math.max(...Array.from(predictions)))];
+
+    predictions.sort((a, b) => b - a);
+    if (predictions[0] - predictions[1] < 10) {
+      return "(?) " + bestPrediction;
+    }
+    return bestPrediction;
+  }
+
+  checkOwnershipFromRect(rect: Rect) {
+    if (!this.complete) return;
+
+    this.workCanvas.width = 28;
+    this.workCanvas.height = 1;
+
+    const offset = {
+      "1920": 305,
+      "1600": 255,
+      "1280": 205,
+      "1024": 165,
+    }[this.clientWidth];
+
+    const circleHue = this.rgb2hue(
+      this.getPixelColor(rect.x + rect.w + 5, rect.y)
+    );
+
+    if (175 < circleHue && circleHue < 195) {
+      return "unknown(free week rotation)";
+    }
+
+    this.workCanvas
+      .getContext("2d")
+      ?.drawImage(
+        this.canvas,
+        Math.floor(rect.x + rect.w / 2) - 10,
+        rect.y + offset,
+        20,
+        1,
+        0,
+        0,
+        20,
+        1
+      );
+
+    return (
+      Math.max(
+        ...Array.from(
+          this.workCanvas
+            .getContext("2d")
+            .getImageData(0, 0, 20, 1)
+            .data.filter((_, i) => i % 4 === 0)
+        )
+      ) < 50
+    );
+  }
+
+  checkMasteryFromRect(rect: Rect) {
+    const offset = {
+      "1920": [6, 66],
+      "1600": [5, 55],
+      "1280": [4, 44],
+      "1024": [3, 35],
+    }[this.clientWidth];
+
+    const flagHue = this.rgb2hue(
+      this.getPixelColor(rect.x + 2, rect.y + rect.h + 2)
+    );
+
+    if (195 < flagHue && flagHue < 210) return 7;
+    if (285 < flagHue && flagHue < 300) return 6;
+    if (345 < flagHue && flagHue < 360) return 5;
+
+    // console.log(
+    //   Array.from(
+    //     rect.canvas
+    //       .getContext("2d")
+    //       .getImageData(
+    //         Math.round(rect.x + offset[0]),
+    //         rect.y + rect.h,
+    //         1,
+    //         offset[1]
+    //       )
+    //       .data.filter((_, i) => i % 4 === 0)
+    //   )
+    //     .map((v) => (v > 75 ? 1 : 0))
+    //     .join(""),
+    //   Array.from(
+    //     rect.canvas
+    //       .getContext("2d")
+    //       .getImageData(rect.x + offset[0], rect.y + rect.h, 1, offset[1])
+    //       .data.filter((_, i) => i % 4 === 0)
+    //   )
+    //     .map((v) => (v > 75 ? 1 : 0))
+    //     .join("")
+    //     .replace(/1+/g, "1")
+    //     .replace(/0/g, "").length
+    // );
+
+    return Array.from(
+      rect.canvas
+        .getContext("2d")
+        .getImageData(rect.x + offset[0], rect.y + rect.h, 1, offset[1])
+        .data.filter((_, i) => i % 4 === 0)
+    )
+      .map((v) => (v > 75 ? 1 : 0))
+      .join("")
+      .replace(/1+/g, "1")
+      .replace(/0/g, "").length;
+  }
+
+  checkChestAvailable(rect: Rect) {
+    const offset = {
+      "1920": 30,
+      "1600": 25,
+      "1280": 20,
+      "1024": 18,
+    }[this.clientWidth];
+
+    const circle1Hue = this.rgb2hue(
+      this.getPixelColor(rect.x + rect.w + 5, rect.y)
+    );
+
+    const circle2Hue = this.rgb2hue(
+      this.getPixelColor(rect.x + rect.w + 5, rect.y + offset)
+    );
+
+    if (
+      (circle1Hue > 35 && circle1Hue < 55) ||
+      (circle2Hue > 35 && circle2Hue < 55)
+    ) {
+      return false;
+    }
+    return true;
   }
 
   computeRects() {
@@ -191,10 +394,19 @@ export default class Champions extends Capture {
     let rects: Rect[] = [];
     let x = offset.xStart;
     let y = offset.yStart;
+    let canvasIndex = 0;
 
-    while (y + offset.iconHeight < this.canvas.height) {
+    while (
+      y + offset.iconHeight < this.canvas.height &&
+      canvasIndex < this.canvasList.length
+    ) {
+      if (y > 30000) {
+        y -= 30000;
+        canvasIndex++;
+      }
       if (x < this.canvas.width) {
         rects.push({
+          canvas: this.canvasList[canvasIndex],
           cat: "coll_skin",
           x,
           y,
@@ -207,6 +419,48 @@ export default class Champions extends Capture {
         x = offset.xStart;
       }
     }
+
+    if (rects.length >= 5) {
+      const checkLastFive = [
+        rects.pop(),
+        rects.pop(),
+        rects.pop(),
+        rects.pop(),
+        rects.pop(),
+      ].reverse();
+
+      checkLastFive.forEach((rect) => {
+        const image = rect.canvas
+          .getContext("2d")
+          .getImageData(rect.x, rect.y, rect.w, rect.h)
+          .data.filter((n, i) => i % 4 !== 3);
+        for (let i = 0; i < image.length; i++) {
+          if (image[i] > 120) {
+            rects.push(rect);
+            break;
+          }
+        }
+      });
+    }
+
     return rects;
+  }
+
+  isViewingUnowned() {
+    const check = {
+      "1024": { x: 30, y: 294 },
+      "1280": { x: 37, y: 373 },
+      "1600": { x: 46, y: 465 },
+      "1920": { x: 55, y: 559 },
+    }[this.clientWidth];
+
+    this.workCanvas
+      .getContext("2d")
+      .drawImage(this.videoElement.current, check.x, check.y, 1, 1, 0, 0, 1, 1);
+    const checkPixel = this.workCanvas
+      .getContext("2d")
+      .getImageData(0, 0, 1, 1).data;
+
+    return checkPixel[0] > 50;
   }
 }

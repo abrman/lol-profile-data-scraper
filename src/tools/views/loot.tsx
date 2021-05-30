@@ -7,6 +7,7 @@ type Rect = {
   y: number;
   w: number;
   h: number;
+  canvas: HTMLCanvasElement;
   cat?: string;
   type?: string;
   count?: number;
@@ -88,12 +89,11 @@ export default class Loot extends Capture {
   lookupTable: LookupTable;
   models: Models;
   classifiedRects: Rect[];
-  annotatedCanvas: HTMLCanvasElement;
 
   async prepareClassificationAssets() {
     const [lookupTable, champions, skins, wards, numbers, shard_permanent] =
       await Promise.all([
-        fetch("/lookup_table.json"),
+        fetch("/lookup_data/loot.json").then((res) => res.json()),
         tf.loadLayersModel("/models/champions/model.json"),
         tf.loadLayersModel("/models/skins/model.json"),
         tf.loadLayersModel("/models/wards/model.json"),
@@ -101,9 +101,7 @@ export default class Loot extends Capture {
         tf.loadLayersModel("/models/shard_permanent/model.json"),
       ]);
 
-    await lookupTable.text().then((data) => {
-      this.lookupTable = JSON.parse(data);
-    });
+    this.lookupTable = lookupTable;
 
     this.models = {
       champions,
@@ -112,43 +110,44 @@ export default class Loot extends Capture {
       numbers,
       shard_permanent,
     };
+    this.loaded = true;
   }
 
   recognize() {
+    super.recognize();
     if (this.classifiedRects) return this.classifiedRects;
 
     const rects = this.computeRects();
     this.classifiedRects = this.classifyRects(rects);
+    return this.classifiedRects;
+  }
 
-    this.annotatedCanvas = document.createElement("canvas");
-    const annotatedCtx = this.annotatedCanvas.getContext("2d");
-    this.annotatedCanvas.width = this.canvas.width;
-    this.annotatedCanvas.height = this.canvas.height;
-
-    annotatedCtx.drawImage(this.canvas, 0, 0);
+  annotateImages() {
+    super.annotateImages();
+    if (this.classifiedRects == null) return;
 
     this.classifiedRects.forEach((rect: Rect, i: number) => {
-      if (annotatedCtx === null) return;
-      annotatedCtx.beginPath();
+      const ctx = rect.canvas.getContext("2d");
+      ctx.beginPath();
 
-      annotatedCtx.globalAlpha = 0.6;
-      annotatedCtx.fillStyle = "#000";
-      annotatedCtx.fillRect(rect.x, rect.y, rect.w, rect.h);
-      annotatedCtx.globalAlpha = 1;
+      ctx.globalAlpha = 0.6;
+      ctx.fillStyle = "#000";
+      ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+      ctx.globalAlpha = 1;
 
-      annotatedCtx.lineWidth = 2;
-      annotatedCtx.strokeStyle =
+      ctx.lineWidth = 2;
+      ctx.strokeStyle =
         (rect.name || "").indexOf("(?)") < 0 ? "#fff" : "yellow";
-      annotatedCtx.rect(rect.x, rect.y, rect.w, rect.h);
-      annotatedCtx.stroke();
+      ctx.rect(rect.x, rect.y, rect.w, rect.h);
+      ctx.stroke();
       if (
         typeof rect.type !== "undefined" &&
         typeof rect.count !== "undefined" &&
         typeof rect.name !== "undefined"
       ) {
-        annotatedCtx.font = "10px Arial";
-        annotatedCtx.fillStyle = "#fff";
-        annotatedCtx.fillText(
+        ctx.font = "10px Arial";
+        ctx.fillStyle = "#fff";
+        ctx.fillText(
           `${rect.count.toString()}x ${rect.name} ${rect.type}`,
           rect.x + 3,
           rect.y + 15,
@@ -279,18 +278,6 @@ export default class Loot extends Capture {
       return "(?) " + bestPrediction;
     }
     return bestPrediction;
-  }
-
-  rgb2hue(r: number, g: number, b: number) {
-    const max = Math.max(r, g, b);
-    const diff = max - Math.min(r, g, b);
-    const hue =
-      max === r
-        ? 6 + (g - b) / diff
-        : max === g
-        ? 2 + (b - r) / diff
-        : 4 + (r - g) / diff;
-    return Math.round(hue * 60) % 360;
   }
 
   masteryTokenFromRect(rect: Rect) {
@@ -549,17 +536,21 @@ export default class Loot extends Capture {
     let items = [];
     let currLine = lines.shift() || Infinity;
     let currCategory = "";
+    let canvasIndex = 0;
+    let y = offset.yStart;
 
-    for (
-      let y = offset.yStart;
-      y < this.canvas.height;
-      y += offset.iconOffsetY
-    ) {
+    while (y < this.canvas.height && canvasIndex < this.canvasList.length) {
+      if (y > 30000) {
+        y -= 30000;
+        canvasIndex++;
+      }
+
       if (y + offset.iconHeight < currLine) {
         if (currCategory !== "none") {
           for (let i = 0; i < 4; i++) {
             items.push({
               cat: currCategory,
+              canvas: this.canvasList[canvasIndex],
               x: offset.xStart + offset.iconOffsetX * i,
               y: y,
               w: offset.iconWidth,
@@ -595,6 +586,7 @@ export default class Loot extends Capture {
           });
         }
       }
+      y += offset.iconOffsetY;
     }
     return items;
   }

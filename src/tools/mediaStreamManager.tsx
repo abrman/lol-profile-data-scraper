@@ -24,8 +24,16 @@ export const mediaStreamManager: MediaStreamManager = {
     })().then((stream) => {
       this.captureStream = stream;
       this.onStreamBegin(stream, callback);
-      console.log(stream);
     });
+  },
+
+  stopCapture() {
+    let tracks = (
+      scraper.videoElement.current.srcObject as MediaStream
+    ).getTracks();
+
+    tracks.forEach((track) => track.stop());
+    scraper.videoElement.current.srcObject = null;
   },
 
   onStreamBegin(stream: MediaStream, callback: () => void) {

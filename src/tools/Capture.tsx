@@ -59,7 +59,8 @@ type Options = {
 };
 
 export default class Capture {
-  canvas = document.createElement("canvas");
+  rawCanvasList: HTMLCanvasElement[] = [document.createElement("canvas")];
+  canvasList: HTMLCanvasElement[] = [document.createElement("canvas")];
   workCanvas = document.createElement("canvas");
   scrollBarCanvas = document.createElement("canvas");
 
@@ -73,6 +74,8 @@ export default class Capture {
   loadCheck: LoadChecks;
   videoElement: React.RefObject<HTMLVideoElement>;
   checkFunction: () => Boolean;
+  currentProgress: number = 0;
+  loaded: boolean = false;
 
   constructor(
     videoElement: React.RefObject<HTMLVideoElement>,
@@ -105,6 +108,35 @@ export default class Capture {
     this.loop();
   }
 
+  get canvas() {
+    return this.canvasList[this.canvasList.length - 1];
+  }
+
+  get rawCanvas() {
+    return this.rawCanvasList[this.rawCanvasList.length - 1];
+  }
+
+  addCanvas() {
+    const prevCanvas = this.canvas;
+
+    this.canvasList.push(document.createElement("canvas"));
+    this.canvas.width = prevCanvas.width;
+    this.canvas.height = prevCanvas.height;
+    this.canvas
+      .getContext("2d")
+      .drawImage(
+        prevCanvas,
+        0,
+        30000,
+        prevCanvas.width,
+        1000,
+        0,
+        0,
+        prevCanvas.width,
+        1000
+      );
+  }
+
   loop() {
     if (
       !this.complete &&
@@ -119,32 +151,28 @@ export default class Capture {
   }
 
   progress() {
-    const progress = (
-      (this.firstFreeRowIndex() / this.canvas.height) *
-      100
-    ).toFixed(1);
-    return progress !== "-0.0" ? progress + "%" : "100%";
+    return (this.currentProgress * 100).toFixed(1) + "%";
   }
 
-  firstFreeRowIndex() {
+  firstFreeRowIndex(canvas?: HTMLCanvasElement) {
+    canvas = canvas || this.canvas;
     const alphaChannel = Array.from(
-      this.canvas.getContext("2d").getImageData(0, 0, 1, this.canvas.height)
-        .data
+      canvas.getContext("2d").getImageData(0, 0, 1, canvas.height).data
     ).filter((_, i) => i % 4 === 3);
     return alphaChannel.indexOf(0);
   }
 
   attemptScreenshot() {
+    if (this.firstFreeRowIndex() > 31000) this.addCanvas();
+
     const ssArea = this.screenshotArea[this.clientWidth];
-    const atBottom = this.scrollBarInfo().atBottom;
+    const scrollBarInfo = this.scrollBarInfo();
+    const atBottom = scrollBarInfo.atBottom;
     const freeRowIndex = this.firstFreeRowIndex();
 
     if (freeRowIndex === 0) {
       this.canvas.width = this.screenshotArea[this.clientWidth].w;
-      this.canvas.height =
-        400 +
-        this.screenshotArea[this.clientWidth].h *
-          (1 / this.scrollBarInfo().size);
+      this.canvas.height = 32000;
 
       this.canvas
         .getContext("2d")
@@ -222,21 +250,123 @@ export default class Capture {
             atBottom ? this.clientHeight - ssArea.y : ssArea.h
           );
 
+        this.currentProgress =
+          scrollBarInfo.offsetTop +
+          scrollBarInfo.size * scrollBarInfo.offsetTop;
+
         if (atBottom) {
-          this.cropFinalScreenshot();
+          this.workCanvas
+            .getContext("2d")
+            .drawImage(
+              this.videoElement.current,
+              ssArea.x,
+              ssArea.y + ssArea.h,
+              ssArea.w,
+              1,
+              0,
+              0,
+              ssArea.w,
+              1
+            );
+
+          const lastRowRedChannel = Array.from(
+            this.workCanvas.getContext("2d").getImageData(0, 0, ssArea.w, 1)
+              .data
+          ).filter((_, i) => i % 4 === 0);
+
+          // Confirm it's the last row - important with large collections where scrollbar
+          // appears at the bottom even though there's a couple more pixels to render
+          if (Math.max(...lastRowRedChannel) < 30) {
+            this.currentProgress = 1;
+            this.cropAlphaFromCanvases();
+          }
         }
         break;
       }
     }
   }
 
-  cropFinalScreenshot() {
-    const canvasHeight = this.firstFreeRowIndex();
-    const screenshotData = this.canvas
-      .getContext("2d")
-      .getImageData(0, 0, this.canvas.width, canvasHeight);
-    this.canvas.height = canvasHeight;
-    this.canvas.getContext("2d").putImageData(screenshotData, 0, 0);
+  recognize() {
+    if (!this.complete) this.cropAlphaFromCanvases();
+  }
+
+  annotateImages() {
+    for (let i = 0; i < this.canvasList.length; i++) {
+      this.rawCanvasList.push(document.createElement("canvas"));
+      this.rawCanvas.width = this.canvasList[i].width;
+      this.rawCanvas.height = this.canvasList[i].height;
+      this.rawCanvas.getContext("2d").drawImage(this.canvasList[i], 0, 0);
+    }
+  }
+
+  cropCanvasesByRects(
+    rects: {
+      x: number;
+      y: number;
+      w: number;
+      h: number;
+      canvas: HTMLCanvasElement;
+      [x: string]: any;
+    }[]
+  ) {
+    const minMaxArr = Array(this.canvasList.length)
+      .fill(0)
+      .map((_) => [Infinity, 0]);
+    rects.forEach((rect) => {
+      const i = this.canvasList.indexOf(rect.canvas);
+      minMaxArr[i] = [
+        Math.min(minMaxArr[i][0], rect.y),
+        Math.max(minMaxArr[i][1], rect.y + rect.h),
+      ];
+    });
+
+    const offsetRectsTop = [0];
+
+    for (let i = 0; i < minMaxArr.length; i++) {
+      const canvas = this.canvasList[i];
+      let cropTop = 0;
+      let cropBottom = canvas.height;
+      if (i !== 0) {
+        // define crop top
+        const prevMaxY = minMaxArr[i - 1][1];
+        const currMinY = minMaxArr[i][0];
+        cropTop = Math.floor(currMinY + prevMaxY - 30000) / 2;
+        offsetRectsTop[i] = -cropTop;
+      }
+      if (i !== this.canvasList.length - 1) {
+        // define crop bottom
+        const currMaxY = minMaxArr[i][1];
+        const nextMinY = minMaxArr[i + 1][0];
+        cropBottom = Math.floor(currMaxY + nextMinY + 30000) / 2;
+      }
+      const imageData = canvas
+        .getContext("2d")
+        .getImageData(0, cropTop, canvas.width, cropBottom - cropTop);
+      canvas.height = cropBottom - cropTop;
+      canvas.getContext("2d").putImageData(imageData, 0, 0);
+
+      const rawCanvas = this.rawCanvasList[i];
+      const rawCanvasImageData = canvas
+        .getContext("2d")
+        .getImageData(0, cropTop, rawCanvas.width, cropBottom - cropTop);
+      rawCanvas.height = cropBottom - cropTop;
+      rawCanvas.getContext("2d").putImageData(rawCanvasImageData, 0, 0);
+    }
+
+    rects.forEach((rect) => {
+      rect.y = rect.y - offsetRectsTop[this.canvasList.indexOf(rect.canvas)];
+    });
+  }
+
+  cropAlphaFromCanvases() {
+    this.canvasList.forEach((canvas) => {
+      const canvasHeight = Math.max(this.firstFreeRowIndex(canvas), 1);
+      const screenshotData = canvas
+        .getContext("2d")
+        .getImageData(0, 0, canvas.width, canvasHeight);
+      canvas.height = canvasHeight;
+      canvas.getContext("2d").putImageData(screenshotData, 0, 0);
+    });
     this.complete = true;
   }
 
@@ -262,12 +392,48 @@ export default class Capture {
     const scrollBar = redChannel.map((v) => (v > 32 ? 1 : 0)).join("");
     return {
       size: scrollBar.replace(/0/g, "").length / redChannel.length,
+      offsetTop: scrollBar.replace(/1+0+/g, "").length / redChannel.length,
       atTop:
         scrollBar[0] === "1" && scrollBar.replace(/(.)\1+/g, "$1") === "10",
       atBottom:
         scrollBar[scrollBar.length - 1] === "1" &&
         scrollBar.replace(/(.)\1+/g, "$1") === "01",
     };
+  }
+
+  getPixelColor(x: number, y: number) {
+    const [r, g, b] = Array.from(
+      this.canvas.getContext("2d").getImageData(x, y, 1, 1).data
+    );
+    return [r, g, b];
+  }
+
+  rgb2hue(
+    r: number | number[],
+    g?: number | undefined,
+    b?: number | undefined
+  ) {
+    if (typeof r == "number") {
+      const max = Math.max(r, g, b);
+      const diff = max - Math.min(r, g, b);
+      const hue =
+        max === r
+          ? 6 + (g - b) / diff
+          : max === g
+          ? 2 + (b - r) / diff
+          : 4 + (r - g) / diff;
+      return Math.round(hue * 60) % 360;
+    } else {
+      const max = Math.max(r[0], r[1], r[2]);
+      const diff = max - Math.min(r[0], r[1], r[2]);
+      const hue =
+        max === r[0]
+          ? 6 + (r[1] - r[2]) / diff
+          : max === r[1]
+          ? 2 + (r[2] - r[0]) / diff
+          : 4 + (r[0] - r[1]) / diff;
+      return Math.round(hue * 60) % 360;
+    }
   }
 
   isLoaded() {
