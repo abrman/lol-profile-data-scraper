@@ -161,7 +161,6 @@ export default class Skins extends Capture {
     if (this.classifiedRects == null) return;
 
     this.classifiedRects.forEach((rect: Rect, i: number) => {
-      console.log(rect);
       const ctx = rect.canvas.getContext("2d");
       ctx.beginPath();
 
