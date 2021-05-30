@@ -61,9 +61,8 @@ In simple terms the plan of this project is to guide the user to scroll the view
 
 
 **Utility:**
-⚫ Large screenshot support:
-Implement support for skin & loot libraries that span in height over 32767px
-Until then, it's better to use smallest client possible (Ctrl + [-]) to downscale.
+🟢 Large screenshot support:
+Implement support for skin & loot libraries that span in height over 32767px (canvas height limit in most modern browsers)
 
 **Extra:**
 ⚫ ALL OUT KDA Seraphine has 3 forms
