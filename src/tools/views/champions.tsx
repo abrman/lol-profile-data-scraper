@@ -123,11 +123,6 @@ export default class Champions extends Capture {
         );
       }
     });
-    // const clientWidth = this.clientWidth;
-    // console.log("Saving");
-    // zip.generateAsync({ type: "blob" }).then(function (content) {
-    //   saveAs(content, "champions_" + clientWidth + ".zip");
-    // });
   }
 
   lookupTable: LookupTable;
@@ -288,32 +283,6 @@ export default class Champions extends Capture {
     if (195 < flagHue && flagHue < 210) return 7;
     if (285 < flagHue && flagHue < 300) return 6;
     if (345 < flagHue && flagHue < 360) return 5;
-
-    // console.log(
-    //   Array.from(
-    //     rect.canvas
-    //       .getContext("2d")
-    //       .getImageData(
-    //         Math.round(rect.x + offset[0]),
-    //         rect.y + rect.h,
-    //         1,
-    //         offset[1]
-    //       )
-    //       .data.filter((_, i) => i % 4 === 0)
-    //   )
-    //     .map((v) => (v > 75 ? 1 : 0))
-    //     .join(""),
-    //   Array.from(
-    //     rect.canvas
-    //       .getContext("2d")
-    //       .getImageData(rect.x + offset[0], rect.y + rect.h, 1, offset[1])
-    //       .data.filter((_, i) => i % 4 === 0)
-    //   )
-    //     .map((v) => (v > 75 ? 1 : 0))
-    //     .join("")
-    //     .replace(/1+/g, "1")
-    //     .replace(/0/g, "").length
-    // );
 
     return Array.from(
       rect.canvas
