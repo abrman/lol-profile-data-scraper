@@ -19,7 +19,7 @@ In simple terms the plan of this project is to guide the user to scroll the view
 🟢 Loot
 🟢 Collection - Champions
 🟢 Collection - Skins
-⚫ Emotes
+🟢 Emotes
 ⚫ Icons
 ⚫ Wards
 ⚫ Chromas
@@ -63,6 +63,9 @@ In simple terms the plan of this project is to guide the user to scroll the view
 **Utility:**
 🟢 Large screenshot support:
 Implement support for skin & loot libraries that span in height over 32767px (canvas height limit in most modern browsers)
+
+⚫ Interface manager improvements:
+Explore faster ways to get current view. Like One draw call and asking for data of interesting pixels rather than doing a 1x1px draw calls multiple times.
 
 **Extra:**
 ⚫ ALL OUT KDA Seraphine has 3 forms
