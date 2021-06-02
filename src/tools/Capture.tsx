@@ -4,6 +4,7 @@ type ScreenshotArea = {
   w: number;
   h: number;
   add: number;
+  yBottomCheck?: number;
 };
 
 type ScreenshotAreas = {
@@ -250,17 +251,23 @@ export default class Capture {
             atBottom ? this.clientHeight - ssArea.y : ssArea.h
           );
 
-        this.currentProgress =
+        this.currentProgress = Math.min(
           scrollBarInfo.offsetTop +
-          scrollBarInfo.size * scrollBarInfo.offsetTop;
+            scrollBarInfo.size * scrollBarInfo.offsetTop,
+          0.999
+        );
 
         if (atBottom) {
+          let bottomRowY = ssArea.y + ssArea.h;
+          if (typeof ssArea.yBottomCheck !== "undefined") {
+            bottomRowY = ssArea.yBottomCheck;
+          }
           this.workCanvas
             .getContext("2d")
             .drawImage(
               this.videoElement.current,
               ssArea.x,
-              ssArea.y + ssArea.h,
+              bottomRowY,
               ssArea.w,
               1,
               0,

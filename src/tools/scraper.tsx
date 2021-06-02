@@ -6,6 +6,7 @@ import * as tf from "@tensorflow/tfjs";
 import Skins from "./views/skins";
 import Loot from "./views/loot";
 import Champions from "./views/champions";
+import Emotes from "./views/emotes";
 
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
@@ -48,6 +49,10 @@ const scraper: Scraper = {
               ? "100%"
               : scraper.champions.progress())) ||
           "0%",
+        emotes:
+          (scraper.emotes &&
+            (scraper.emotes.complete ? "100%" : scraper.emotes.progress())) ||
+          "0%",
       },
     };
 
@@ -66,33 +71,36 @@ const scraper: Scraper = {
           Skins: {info.progress.skins}
           <br />
           Champions: {info.progress.champions}
+          <br />
+          Emotes: {info.progress.emotes}
+          <br />
         </p>
         {scanningFinished && "Scanning is finished :)"}
         <button onClick={() => scraper.download()}>Download ZIP</button>
       </>
     );
 
-    // if (info.progress.loot === "100%") {
-    //   scraper.loot.recognize();
-    //   if (typeof scraper.setImg1 == "function" && scraper.loot.canvasList[0])
-    //     scraper.setImg1(scraper.loot.canvasList[0].toDataURL());
-    //   scraper.setImg1 = null;
-    //   if (typeof scraper.setImg2 == "function" && scraper.loot.canvasList[1])
-    //     scraper.setImg2(scraper.loot.canvasList[1].toDataURL());
-    //   scraper.setImg2 = null;
-    //   if (typeof scraper.setImg3 == "function" && scraper.loot.canvasList[2])
-    //     scraper.setImg3(scraper.loot.canvasList[2].toDataURL());
-    //   scraper.setImg3 = null;
-    //   if (typeof scraper.setImg4 == "function" && scraper.loot.canvasList[3])
-    //     scraper.setImg4(scraper.loot.canvasList[3].toDataURL());
-    //   scraper.setImg4 = null;
-    //   if (typeof scraper.setImg5 == "function" && scraper.loot.canvasList[4])
-    //     scraper.setImg5(scraper.loot.canvasList[4].toDataURL());
-    //   scraper.setImg5 = null;
-    //   if (typeof scraper.setImg6 == "function" && scraper.loot.canvasList[5])
-    //     scraper.setImg6(scraper.loot.canvasList[5].toDataURL());
-    //   scraper.setImg6 = null;
-    // }
+    if (info.progress.emotes === "100%") {
+      scraper.emotes.recognize();
+      if (typeof scraper.setImg1 == "function" && scraper.emotes.canvasList[0])
+        scraper.setImg1(scraper.emotes.canvasList[0].toDataURL());
+      scraper.setImg1 = null;
+      if (typeof scraper.setImg2 == "function" && scraper.emotes.canvasList[1])
+        scraper.setImg2(scraper.emotes.canvasList[1].toDataURL());
+      scraper.setImg2 = null;
+      if (typeof scraper.setImg3 == "function" && scraper.emotes.canvasList[2])
+        scraper.setImg3(scraper.emotes.canvasList[2].toDataURL());
+      scraper.setImg3 = null;
+      if (typeof scraper.setImg4 == "function" && scraper.emotes.canvasList[3])
+        scraper.setImg4(scraper.emotes.canvasList[3].toDataURL());
+      scraper.setImg4 = null;
+      if (typeof scraper.setImg5 == "function" && scraper.emotes.canvasList[4])
+        scraper.setImg5(scraper.emotes.canvasList[4].toDataURL());
+      scraper.setImg5 = null;
+      if (typeof scraper.setImg6 == "function" && scraper.emotes.canvasList[5])
+        scraper.setImg6(scraper.emotes.canvasList[5].toDataURL());
+      scraper.setImg6 = null;
+    }
 
     requestAnimationFrame(scraper.loop);
   },
@@ -103,6 +111,7 @@ const scraper: Scraper = {
       ["skins", this.skins],
       ["loot", this.loot],
       ["champions", this.champions],
+      ["emotes", this.emotes],
     ];
 
     views.forEach(([viewName, view]) => {
@@ -148,6 +157,7 @@ const scraper: Scraper = {
       this.skins = new Skins(this.videoElement, currView);
       this.loot = new Loot(this.videoElement, currView);
       this.champions = new Champions(this.videoElement, currView);
+      this.emotes = new Emotes(this.videoElement, currView);
     });
   },
 };
