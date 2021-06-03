@@ -36,6 +36,7 @@ interface InterfaceManager {
   currentInterface(
     videoElement: React.RefObject<HTMLVideoElement>
   ): string | false;
+  lastCurrentInterfaceComputeTime: number;
   // [x: string]: any;
 }
 
@@ -47,6 +48,7 @@ export const interfaceManager: InterfaceManager = {
   videoElement: React.createRef<HTMLVideoElement>(),
   currentUi: "main_menu",
   storePixel: { x: -1, y: -1 },
+  lastCurrentInterfaceComputeTime: 0,
 
   collectionLabels: [
     "champions",
@@ -139,7 +141,11 @@ export const interfaceManager: InterfaceManager = {
 
   currentInterface(videoElement: React.RefObject<HTMLVideoElement>) {
     this.init(videoElement);
-    if (!this.initiated) return false;
+    if (
+      !this.initiated ||
+      new Date().getTime() - 1000 / 144 < this.lastCurrentInterfaceComputeTime
+    )
+      return this.currentUi;
     if (this.searchCoordinates === false) {
       console.error("couldn't find searchCoordinates on currentInterface()");
       return false;
@@ -167,6 +173,7 @@ export const interfaceManager: InterfaceManager = {
       if (active_menu_items[0]) this.currentUi = active_menu_items[0][0];
       else this.currentUi = "unknown";
     }
+    this.lastCurrentInterfaceComputeTime = new Date().getTime();
     return this.currentUi;
   },
 
