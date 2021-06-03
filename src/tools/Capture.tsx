@@ -399,6 +399,14 @@ export default class Capture {
     const scrollBar = redChannel
       .map((v) => (v > 32 && v < 150 ? 1 : 0))
       .join("");
+    if (scrollBar.indexOf("1") === -1) {
+      return {
+        size: 1,
+        offsetTop: 1,
+        atTop: 1,
+        atBottom: 1,
+      };
+    }
     return {
       size: scrollBar.replace(/0/g, "").length / redChannel.length,
       // offsetTop: scrollBar.replace(/1+0+/g, "").length / redChannel.length,
