@@ -229,7 +229,7 @@ export default class Capture {
               matchingData[
                 i * w * 4 + x * 4 + c + (((x + y) * w * 4) % (w * h * 4))
               ];
-            if (Math.abs(search - match) < 40 || (search < 50 && match < 50)) {
+            if (Math.abs(search - match) < 60 || (search < 50 && match < 50)) {
             } else {
               continue search;
             }
@@ -396,15 +396,21 @@ export default class Capture {
       this.scrollBarCanvas.getContext("2d").getImageData(0, 0, 1, sb.y2 - sb.y1)
         .data
     ).filter((_, i) => i % 4 === 0);
-    const scrollBar = redChannel.map((v) => (v > 32 ? 1 : 0)).join("");
+    const scrollBar = redChannel
+      .map((v) => (v > 32 && v < 150 ? 1 : 0))
+      .join("");
     return {
       size: scrollBar.replace(/0/g, "").length / redChannel.length,
-      offsetTop: scrollBar.replace(/1+0+/g, "").length / redChannel.length,
+      // offsetTop: scrollBar.replace(/1+0+/g, "").length / redChannel.length,
+      offsetTop:
+        (scrollBar.replace(/1+0+/g, "").length +
+          redChannel.length -
+          scrollBar.replace(/0+1+/g, "").length) /
+        2 /
+        redChannel.length,
       atTop:
         scrollBar[0] === "1" && scrollBar.replace(/(.)\1+/g, "$1") === "10",
-      atBottom:
-        scrollBar[scrollBar.length - 1] === "1" &&
-        scrollBar.replace(/(.)\1+/g, "$1") === "01",
+      atBottom: scrollBar.slice(-2).indexOf("1") >= 0,
     };
   }
 
