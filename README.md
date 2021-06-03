@@ -20,7 +20,7 @@ In simple terms the plan of this project is to guide the user to scroll the view
 🟢 Collection - Champions
 🟢 Collection - Skins
 🟢 Emotes
-⚫ Icons
+🟢 Icons
 ⚫ Wards
 ⚫ Chromas
 
