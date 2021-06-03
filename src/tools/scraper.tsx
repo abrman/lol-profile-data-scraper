@@ -7,6 +7,7 @@ import Skins from "./views/skins";
 import Loot from "./views/loot";
 import Champions from "./views/champions";
 import Emotes from "./views/emotes";
+import Icons from "./views/icons";
 
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
@@ -53,6 +54,10 @@ const scraper: Scraper = {
           (scraper.emotes &&
             (scraper.emotes.complete ? "100%" : scraper.emotes.progress())) ||
           "0%",
+        icons:
+          (scraper.icons &&
+            (scraper.icons.complete ? "100%" : scraper.icons.progress())) ||
+          "0%",
       },
     };
 
@@ -60,6 +65,12 @@ const scraper: Scraper = {
       (prev, curr) => prev && curr === "100%",
       true
     );
+
+    let debug = "";
+
+    if (scraper.icons) {
+      debug = JSON.stringify(scraper.icons.scrollBarInfo());
+    }
 
     scraper.updateAssistant(
       <>
@@ -74,33 +85,36 @@ const scraper: Scraper = {
           <br />
           Emotes: {info.progress.emotes}
           <br />
+          Icons: {info.progress.icons}
+          <br />
+          {debug}
         </p>
         {scanningFinished && "Scanning is finished :)"}
         <button onClick={() => scraper.download()}>Download ZIP</button>
       </>
     );
 
-    if (info.progress.emotes === "100%") {
-      scraper.emotes.recognize();
-      if (typeof scraper.setImg1 == "function" && scraper.emotes.canvasList[0])
-        scraper.setImg1(scraper.emotes.canvasList[0].toDataURL());
-      scraper.setImg1 = null;
-      if (typeof scraper.setImg2 == "function" && scraper.emotes.canvasList[1])
-        scraper.setImg2(scraper.emotes.canvasList[1].toDataURL());
-      scraper.setImg2 = null;
-      if (typeof scraper.setImg3 == "function" && scraper.emotes.canvasList[2])
-        scraper.setImg3(scraper.emotes.canvasList[2].toDataURL());
-      scraper.setImg3 = null;
-      if (typeof scraper.setImg4 == "function" && scraper.emotes.canvasList[3])
-        scraper.setImg4(scraper.emotes.canvasList[3].toDataURL());
-      scraper.setImg4 = null;
-      if (typeof scraper.setImg5 == "function" && scraper.emotes.canvasList[4])
-        scraper.setImg5(scraper.emotes.canvasList[4].toDataURL());
-      scraper.setImg5 = null;
-      if (typeof scraper.setImg6 == "function" && scraper.emotes.canvasList[5])
-        scraper.setImg6(scraper.emotes.canvasList[5].toDataURL());
-      scraper.setImg6 = null;
-    }
+    // if (info.progress.icons === "100%") {
+    //   scraper.icons.recognize();
+    //   if (typeof scraper.setImg1 == "function" && scraper.icons.canvasList[0])
+    //     scraper.setImg1(scraper.icons.canvasList[0].toDataURL());
+    //   scraper.setImg1 = null;
+    //   if (typeof scraper.setImg2 == "function" && scraper.icons.canvasList[1])
+    //     scraper.setImg2(scraper.icons.canvasList[1].toDataURL());
+    //   scraper.setImg2 = null;
+    //   if (typeof scraper.setImg3 == "function" && scraper.icons.canvasList[2])
+    //     scraper.setImg3(scraper.icons.canvasList[2].toDataURL());
+    //   scraper.setImg3 = null;
+    //   if (typeof scraper.setImg4 == "function" && scraper.icons.canvasList[3])
+    //     scraper.setImg4(scraper.icons.canvasList[3].toDataURL());
+    //   scraper.setImg4 = null;
+    //   if (typeof scraper.setImg5 == "function" && scraper.icons.canvasList[4])
+    //     scraper.setImg5(scraper.icons.canvasList[4].toDataURL());
+    //   scraper.setImg5 = null;
+    //   if (typeof scraper.setImg6 == "function" && scraper.icons.canvasList[5])
+    //     scraper.setImg6(scraper.icons.canvasList[5].toDataURL());
+    //   scraper.setImg6 = null;
+    // }
 
     requestAnimationFrame(scraper.loop);
   },
@@ -112,6 +126,7 @@ const scraper: Scraper = {
       ["loot", this.loot],
       ["champions", this.champions],
       ["emotes", this.emotes],
+      ["icons", this.icons],
     ];
 
     views.forEach(([viewName, view]) => {
@@ -158,6 +173,7 @@ const scraper: Scraper = {
       this.loot = new Loot(this.videoElement, currView);
       this.champions = new Champions(this.videoElement, currView);
       this.emotes = new Emotes(this.videoElement, currView);
+      this.icons = new Icons(this.videoElement, currView);
     });
   },
 };
