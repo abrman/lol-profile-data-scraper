@@ -66,12 +66,6 @@ const scraper: Scraper = {
       true
     );
 
-    let debug = "";
-
-    if (scraper.icons) {
-      debug = JSON.stringify(scraper.icons.scrollBarInfo());
-    }
-
     scraper.updateAssistant(
       <>
         <p>
@@ -86,8 +80,6 @@ const scraper: Scraper = {
           Emotes: {info.progress.emotes}
           <br />
           Icons: {info.progress.icons}
-          <br />
-          {debug}
         </p>
         {scanningFinished && "Scanning is finished :)"}
         <button onClick={() => scraper.download()}>Download ZIP</button>
