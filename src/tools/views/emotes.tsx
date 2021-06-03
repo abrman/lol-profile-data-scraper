@@ -3,7 +3,7 @@ import Capture from "../Capture";
 
 type Color = [r: number, g: number, b: number];
 
-export default class Champions extends Capture {
+export default class Emotes extends Capture {
   constructor(
     video: React.RefObject<HTMLVideoElement>,
     currentViewFunction: () => string | false
