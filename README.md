@@ -43,6 +43,7 @@ In simple terms the plan of this project is to guide the user to scroll the view
 ⚫ Chromas
 
 **Present usable data:**
+⚫ Create front end UI
 ⚫ Currencies spent on owned items
 ⚫ Ideal champions to craft to maximize champions owned
 ⚫ Blue essence & Orange essence if everything was disenchanted
