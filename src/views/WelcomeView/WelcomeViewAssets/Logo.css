@@ -1,0 +1,62 @@
+.logo {
+  width: 100%;
+  text-align: center;
+  padding: 5vh;
+  font-family: "Ubuntu", sans-serif;
+  box-sizing: border-box;
+}
+
+.title {
+  color: #0a98ff;
+  font-size: 72px;
+  font-weight: 600;
+  min-width: 600px;
+}
+
+.subtitle {
+  color: #555;
+  font-size: 28px;
+  font-weight: 500;
+  min-width: 600px;
+}
+
+.logo span {
+  position: relative;
+  display: inline-block;
+  opacity: 1;
+  transform: scale(1) translateY(0px);
+}
+
+.title span {
+  animation: title-animation 0.8s ease 0s;
+}
+
+.subtitle span {
+  animation: subtitle-animation 2s ease 0s;
+}
+
+@keyframes title-animation {
+  0% {
+    transform: scale(0.3) translateY(200px);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1) translateY(0px);
+    opacity: 1;
+  }
+}
+
+@keyframes subtitle-animation {
+  0% {
+    transform: scale(0.5) translateY(200px);
+    opacity: 0;
+  }
+  40% {
+    transform: scale(0.5) translateY(200px);
+    opacity: 0;
+  }
+  80% {
+    transform: scale(1) translateY(0px);
+    opacity: 1;
+  }
+}

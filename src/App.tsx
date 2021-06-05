@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import "./App.css";
 import loot from "./assets/loot-tab.jpg";
 import scraper from "./tools/scraper";
-import WelcomeText from "./components/WelcomeText";
+import WelcomeText from "./WelcomeText";
 import ScraperAssistant from "./components/ScraperAssistant";
 import Debug from "./components/Debug";
 

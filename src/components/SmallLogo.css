@@ -1,0 +1,22 @@
+h1.small-logo {
+  color: #0a98ff;
+  font-size: 48px;
+  font-weight: 700;
+  width: fit-content;
+  margin: 7vh 14vh;
+}
+
+h1.small-logo.animate-in {
+  animation: small-logo-animation 0.8s ease 0s;
+}
+
+@keyframes small-logo-animation {
+  0% {
+    transform: translateY(200px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0px);
+    opacity: 1;
+  }
+}

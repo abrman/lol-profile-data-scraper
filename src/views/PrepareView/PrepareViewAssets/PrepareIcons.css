@@ -1,0 +1,39 @@
+.prepare-icons {
+  font-family: "Ubuntu", sans-serif;
+  display: flex;
+  width: 80vw;
+  min-width: 600px;
+  margin: 0 auto;
+  justify-content: space-evenly;
+  text-align: center;
+  color: #333;
+  font-size: 24px;
+  font-weight: 500;
+  animation: prepare-animation 1.5s ease 0s;
+}
+
+.prepare-icons .block {
+  width: 400px;
+  padding: 20px;
+}
+
+.prepare-icons svg {
+  overflow: visible;
+  max-width: 300px;
+  height: auto;
+}
+
+@keyframes prepare-animation {
+  0% {
+    transform: scale(1) translateY(200px);
+    opacity: 0;
+  }
+  20% {
+    transform: scale(1) translateY(200px);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1) translateY(0px);
+    opacity: 1;
+  }
+}

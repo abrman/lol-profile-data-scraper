@@ -1,0 +1,415 @@
+import "./PrepareIcons.css";
+
+const PrepareIcons = () => {
+  const icons = {
+    clearPopups: (
+      <svg
+        width="496"
+        height="279"
+        viewBox="0 0 496 279"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <rect
+          x="3.5"
+          y="3.5"
+          width="489"
+          height="272"
+          stroke="black"
+          strokeWidth="7"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M19.5 249H144.5"
+          stroke="black"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <rect
+          x="26.5"
+          y="63.5"
+          width="22"
+          height="23"
+          stroke="black"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <rect
+          x="26.5"
+          y="96.5"
+          width="22"
+          height="23"
+          stroke="black"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <rect
+          x="26.5"
+          y="129.5"
+          width="22"
+          height="23"
+          stroke="black"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <rect
+          x="26.5"
+          y="162.5"
+          width="22"
+          height="23"
+          stroke="black"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <rect
+          x="26.5"
+          y="195.5"
+          width="22"
+          height="23"
+          stroke="black"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M50 241V227H25V241"
+          stroke="black"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <rect
+          x="90.5"
+          y="63.5"
+          width="22"
+          height="23"
+          stroke="black"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <rect
+          x="90.5"
+          y="96.5"
+          width="22"
+          height="23"
+          stroke="black"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <rect
+          x="90.5"
+          y="129.5"
+          width="22"
+          height="23"
+          stroke="black"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <rect
+          x="90.5"
+          y="162.5"
+          width="22"
+          height="23"
+          stroke="#0A98FF"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <rect
+          x="90.5"
+          y="195.5"
+          width="22"
+          height="23"
+          stroke="black"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M114 241V227H89V241"
+          stroke="black"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <rect
+          x="58.5"
+          y="63.5"
+          width="22"
+          height="23"
+          stroke="#0A98FF"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <rect
+          x="58.5"
+          y="96.5"
+          width="22"
+          height="23"
+          stroke="black"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <rect
+          x="58.5"
+          y="129.5"
+          width="22"
+          height="23"
+          stroke="black"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <rect
+          x="58.5"
+          y="162.5"
+          width="22"
+          height="23"
+          stroke="black"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <rect
+          x="58.5"
+          y="195.5"
+          width="22"
+          height="23"
+          stroke="black"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M82 241V227H57V241"
+          stroke="black"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <rect
+          x="122.5"
+          y="63.5"
+          width="22"
+          height="23"
+          stroke="black"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <rect
+          x="122.5"
+          y="96.5"
+          width="22"
+          height="23"
+          stroke="black"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <rect
+          x="122.5"
+          y="129.5"
+          width="22"
+          height="23"
+          stroke="#0A98FF"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <rect
+          x="122.5"
+          y="162.5"
+          width="22"
+          height="23"
+          stroke="black"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <rect
+          x="122.5"
+          y="195.5"
+          width="22"
+          height="23"
+          stroke="black"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M146 241V227H121V241"
+          stroke="black"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M8.5 41H486.5M408.5 51.5V266"
+          stroke="black"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <circle
+          cx="421"
+          cy="23"
+          r="10.5"
+          stroke="black"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <rect
+          x="304"
+          y="189"
+          width="94"
+          height="76"
+          stroke="#0A98FF"
+          strokeWidth="4"
+        />
+        <rect
+          x="286"
+          y="54"
+          width="112"
+          height="49"
+          stroke="#0A98FF"
+          strokeWidth="4"
+        />
+        <path
+          d="M60 65.5L77.5 83.5"
+          stroke="#0A98FF"
+          strokeWidth="4"
+          strokeLinecap="round"
+        />
+        <path
+          d="M124 131.5L141.5 149.5"
+          stroke="#0A98FF"
+          strokeWidth="4"
+          strokeLinecap="round"
+        />
+        <path
+          d="M92 164.5L109.5 182.5"
+          stroke="#0A98FF"
+          strokeWidth="4"
+          strokeLinecap="round"
+        />
+        <path
+          d="M304 190L397 262"
+          stroke="#0A98FF"
+          strokeWidth="4"
+          strokeLinecap="round"
+        />
+        <path
+          d="M286 54L397 102"
+          stroke="#0A98FF"
+          strokeWidth="4"
+          strokeLinecap="round"
+        />
+      </svg>
+    ),
+    resizeClient: (
+      <svg
+        width="496"
+        height="279"
+        viewBox="0 0 496 279"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <rect
+          x="112.933"
+          y="64.371"
+          width="270.133"
+          height="150.258"
+          stroke="#0A98FF"
+          strokeWidth="3.86694"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M115.696 85.0867H379.752M336.664 90.8871V209.381"
+          stroke="#0A98FF"
+          strokeWidth="1.65726"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <circle
+          cx="343.568"
+          cy="75.1432"
+          r="5.8004"
+          stroke="#0A98FF"
+          strokeWidth="1.65726"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <rect
+          x="3.5"
+          y="3.5"
+          width="489"
+          height="272"
+          stroke="black"
+          strokeWidth="7"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M482 13L392 57"
+          stroke="black"
+          strokeWidth="4"
+          strokeLinecap="round"
+        />
+        <path
+          d="M14 266L104 222"
+          stroke="black"
+          strokeWidth="4"
+          strokeLinecap="round"
+        />
+        <path
+          d="M14 13L104 57"
+          stroke="black"
+          strokeWidth="4"
+          strokeLinecap="round"
+        />
+        <path
+          d="M482 266L392 222"
+          stroke="black"
+          strokeWidth="4"
+          strokeLinecap="round"
+        />
+      </svg>
+    ),
+  };
+  return (
+    <div className="prepare-icons">
+      <div className="block">
+        <div className="icon">{icons.clearPopups}</div>
+        <div className="text">
+          Hide chats, notifications and
+          <br />
+          remove new items highlights
+        </div>
+      </div>
+      <div className="block">
+        <div className="icon">{icons.resizeClient}</div>
+        <div className="text">
+          Downscale your client for best
+          <br />
+          performance using Ctrl[-]
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default PrepareIcons;

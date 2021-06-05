@@ -1,0 +1,64 @@
+.welcome-icons {
+  font-family: "Ubuntu", sans-serif;
+  display: flex;
+  width: 80vw;
+  min-width: 600px;
+  margin: 0 auto;
+  justify-content: space-evenly;
+  text-align: center;
+  color: #333;
+  font-size: 24px;
+  font-weight: 500;
+  animation: welcome-animation 2.5s ease 0s;
+}
+
+.welcome-icons .block {
+  width: 200px;
+}
+
+.welcome-icons svg {
+  overflow: visible;
+}
+
+.welcome-icons .share .arrow {
+  transform: translate(0, -0);
+  transition: transform 0.3s ease;
+}
+
+.welcome-icons .share:hover .arrow {
+  transform: translate(20px, -20px);
+}
+
+.welcome-icons .scroll .arrow {
+  transform: translate(0, -0);
+  transition: transform 0.3s ease;
+  transform-origin: top center;
+}
+
+.welcome-icons .scroll:hover .arrow {
+  transform: translate(0, 19px) scaleY(0.7);
+}
+
+.welcome-icons .download .arrow {
+  transform: translate(0, -0);
+  transition: transform 0.3s ease;
+}
+
+.welcome-icons .download:hover .arrow {
+  transform: translate(0, -20px);
+}
+
+@keyframes welcome-animation {
+  0% {
+    transform: scale(1) translateY(200px);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1) translateY(200px);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1) translateY(0px);
+    opacity: 1;
+  }
+}
