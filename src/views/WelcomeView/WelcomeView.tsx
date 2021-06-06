@@ -3,18 +3,17 @@ import Logo from "./WelcomeViewAssets/Logo";
 import WelcomeIcons from "./WelcomeViewAssets/WelcomeIcons";
 import "./WelcomeView.css";
 
-const WelcomeView = () => {
-  const [classList, setClassList] = useState([]);
+type Props = {
+  setView: (viewName: string) => void;
+  hide: boolean;
+};
 
-  const hide = () => {
-    setClassList((p) => (p.indexOf("hide") == -1 ? p.concat(["hide"]) : p));
-  };
-
+const WelcomeView = (props: Props) => {
   return (
-    <div className={["welcome-view"].concat(classList).join(" ")}>
+    <div className={"welcome-view" + (props.hide ? " hide" : "")}>
       <Logo />
       <WelcomeIcons />
-      <div className="share-screen" onClick={hide}>
+      <div className="share-screen" onClick={() => props.setView("prepare")}>
         Share game client window
       </div>
     </div>
