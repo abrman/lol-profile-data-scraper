@@ -18,6 +18,7 @@ interface Scraper {
   videoHeight: number;
   model: tf.LayersModel | undefined;
   download: () => void;
+  startCapture: (onSuccess: () => void) => any;
   [x: string]: any;
 }
 
@@ -114,11 +115,11 @@ const scraper: Scraper = {
   download() {
     const zip = new JSZip();
     const views = [
-      ["skins", this.skins],
-      ["loot", this.loot],
-      ["champions", this.champions],
-      ["emotes", this.emotes],
-      ["icons", this.icons],
+      ["skins", scraper.skins],
+      ["loot", scraper.loot],
+      ["champions", scraper.champions],
+      ["emotes", scraper.emotes],
+      ["icons", scraper.icons],
     ];
 
     views.forEach(([viewName, view]) => {
@@ -155,18 +156,22 @@ const scraper: Scraper = {
     });
   },
 
-  startCapture(callback: () => void) {
-    (window as any).scraper = scraper;
-    const currView = () => interfaceManager.currentInterface(this.videoElement);
+  getCurrView() {
+    return interfaceManager.currentInterface(scraper.videoElement);
+  },
 
-    mediaStreamManager.startCapture(() => {
-      callback();
-      this.skins = new Skins(this.videoElement, currView);
-      this.loot = new Loot(this.videoElement, currView);
-      this.champions = new Champions(this.videoElement, currView);
-      this.emotes = new Emotes(this.videoElement, currView);
-      this.icons = new Icons(this.videoElement, currView);
-    });
+  startScraping() {
+    console.log("Started scraping");
+    this.skins = new Skins(this.videoElement, scraper.getCurrView);
+    this.loot = new Loot(this.videoElement, scraper.getCurrView);
+    this.champions = new Champions(this.videoElement, scraper.getCurrView);
+    this.emotes = new Emotes(this.videoElement, scraper.getCurrView);
+    this.icons = new Icons(this.videoElement, scraper.getCurrView);
+    scraper.loop();
+  },
+
+  startCapture(onSuccess) {
+    mediaStreamManager.startCapture(onSuccess);
   },
 };
 

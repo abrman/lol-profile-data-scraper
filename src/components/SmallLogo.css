@@ -12,7 +12,7 @@ h1.small-logo.animate-in {
 
 @keyframes small-logo-animation {
   0% {
-    transform: translateY(200px);
+    transform: translateY(-200px);
     opacity: 0;
   }
   100% {

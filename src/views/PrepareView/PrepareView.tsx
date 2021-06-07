@@ -1,6 +1,7 @@
 import React from "react";
+import scraper from "../../tools/scraper";
 import "./PrepareView.css";
-import PrepareIcons from "./PrepareViewAssets/PrepareIcons";
+import PrepareIcons from "./assets/PrepareIcons";
 import SmallLogo from "../../components/SmallLogo";
 
 type Props = {
@@ -13,6 +14,15 @@ const PrepareView = (props: Props) => {
     <div className={"prepare-view" + (props.hide ? " hide" : "")}>
       <SmallLogo animateIn={true} />
       <PrepareIcons />
+      <div
+        className="prepare-ready"
+        onClick={() => {
+          props.setView("scrape");
+          scraper.startScraping();
+        }}
+      >
+        Start scanning
+      </div>
     </div>
   );
 };

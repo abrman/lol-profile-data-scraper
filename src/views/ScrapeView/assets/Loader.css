@@ -1,0 +1,42 @@
+.loader {
+  display: flex;
+  flex-direction: column;
+  width: 220px;
+  margin: 5px 0 10px 0;
+  position: relative;
+}
+
+.loader .active {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: #0a98ff;
+  left: -20px;
+  top: 9px;
+  border-radius: 10px;
+}
+
+.loader .text {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  font-size: 24px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.loader .bar {
+  width: 100%;
+  height: 6px;
+  background: #000;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.loader .bar .loaded {
+  height: 100%;
+  background: #0a98ff;
+  transition: transform 0.2s ease;
+  transform-origin: left;
+}

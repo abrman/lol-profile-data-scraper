@@ -1,35 +1,43 @@
-// import React, { useState, useRef } from "react";
+import { useState, useRef } from "react";
+import scraper from "./tools/scraper";
 import WelcomeView from "./views/WelcomeView/WelcomeView";
 import PrepareView from "./views/PrepareView/PrepareView";
-import SmallLogo from "./components/SmallLogo";
+import ScrapeView from "./views/ScrapeView/ScrapeView";
 import "./AppReplacement.css";
 
-// type View = "welcome" | "prepare" | "scrape" | "data";
-
 function AppReplacement() {
-  // const [welcomeView, setWelcomeView] = useState(true);
-  // const [prepareView, setPrepareView] = useState(false);
-  // const [scrapeView, setScrapeView] = useState(false);
-  // const [dataView, setDataView] = useState(false);
+  const [isHiding, setIsHiding] = useState(false);
+  const [currView, setCurrView] = useState("welcome");
 
-  // //   const welcomeRef = useRef(null);
-  // //   const prepareRef = useRef(null);
-  // //   const scrapeRef = useRef(null);
-  // //   const dataRef = useRef(null);
+  scraper.videoElement = useRef<HTMLVideoElement>(null);
 
-  // const setView = (view: View) => {
-  //   setWelcomeView(view === "welcome");
-  //   setPrepareView(view === "prepare");
-  //   setScrapeView(view === "scrape");
-  //   setDataView(view === "data");
-  // };
+  const setView = (view: string) => {
+    if (isHiding === false) {
+      setIsHiding(true);
+      setTimeout(() => {
+        setCurrView(view);
+        setIsHiding(false);
+      }, 500);
+    }
+  };
 
   return (
     <>
-      <WelcomeView />
-      {/* <PrepareView /> */}
-      {/* <div>SCRAPE</div> */}
-      {/* <div>DATA</div> */}
+      {currView === "welcome" && (
+        <WelcomeView hide={isHiding} setView={setView} />
+      )}
+
+      {currView === "prepare" && (
+        <PrepareView hide={isHiding} setView={setView} />
+      )}
+
+      {currView === "scrape" && (
+        <ScrapeView hide={isHiding} setView={setView} />
+      )}
+
+      <div className="debug" style={{ display: "none" }}>
+        <video ref={scraper.videoElement}></video>
+      </div>
     </>
   );
 }

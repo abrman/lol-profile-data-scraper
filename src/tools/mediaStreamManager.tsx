@@ -10,7 +10,7 @@ const mediaDevices = navigator.mediaDevices as any; // workaround: https://githu
 export const mediaStreamManager: MediaStreamManager = {
   captureStream: null,
 
-  startCapture(callback: () => void) {
+  startCapture(onSuccess: () => void) {
     (async () => {
       try {
         this.captureStream = await mediaDevices.getDisplayMedia({
@@ -23,7 +23,7 @@ export const mediaStreamManager: MediaStreamManager = {
       return this.captureStream;
     })().then((stream) => {
       this.captureStream = stream;
-      this.onStreamBegin(stream, callback);
+      this.onStreamBegin(stream, onSuccess);
     });
   },
 
@@ -36,20 +36,14 @@ export const mediaStreamManager: MediaStreamManager = {
     scraper.videoElement.current.srcObject = null;
   },
 
-  onStreamBegin(stream: MediaStream, callback: () => void) {
+  onStreamBegin(stream: MediaStream, onSuccess: () => void) {
     if (scraper.videoElement == null || scraper.videoElement.current == null) {
-      alert(
-        "Error: onStreamBegin. VideoElement = null. Please refresh the site and try agian."
-      );
       return;
     }
 
     scraper.videoElement.current.srcObject = stream;
     scraper.videoElement.current.onloadedmetadata = function (e) {
       if (scraper.videoElement.current == null) {
-        alert(
-          "Error: onloadedmetadata. VideoElement = null. Please refresh the site and try agian."
-        );
         return;
       }
       scraper.videoElement.current.play().then(() => {
@@ -66,9 +60,7 @@ export const mediaStreamManager: MediaStreamManager = {
           );
           window.location.reload();
         }
-
-        scraper.loop();
-        callback();
+        onSuccess();
       });
     };
   },
