@@ -1,7 +1,6 @@
 import React from "react";
 import { interfaceManager } from "./interfaceManager";
 import { mediaStreamManager } from "./mediaStreamManager";
-import * as tf from "@tensorflow/tfjs";
 
 import Skins from "./views/skins";
 import Loot from "./views/loot";
@@ -16,100 +15,40 @@ interface Scraper {
   videoElement: React.RefObject<HTMLVideoElement>;
   videoWidth: number;
   videoHeight: number;
-  model: tf.LayersModel | undefined;
-  download: () => void;
+  getCurrView: () => string | false;
   startCapture: (onSuccess: () => void) => any;
-  [x: string]: any;
+  startScraping: () => void;
+  recognize: () => void;
+  download: () => void;
+  skins: any;
+  loot: any;
+  champions: any;
+  emotes: any;
+  icons: any;
 }
 
 const scraper: Scraper = {
   videoElement: React.createRef<HTMLVideoElement>(),
   videoWidth: 0,
   videoHeight: 0,
-  model: undefined,
-  initiated: false,
-  ready: false,
-  lookupTable: {},
-  updateAssistant: (content: JSX.Element) => {},
+  skins: null,
+  loot: null,
+  champions: null,
+  emotes: null,
+  icons: null,
 
-  currentView: "home",
-  loop() {
-    const info = {
-      view: interfaceManager.currentInterface(scraper.videoElement),
-      progress: {
-        loot:
-          (scraper.loot &&
-            (scraper.loot.complete ? "100%" : scraper.loot.progress())) ||
-          "0%",
-        skins:
-          (scraper.skins &&
-            (scraper.skins.complete ? "100%" : scraper.skins.progress())) ||
-          "0%",
-        champions:
-          (scraper.champions &&
-            (scraper.champions.complete
-              ? "100%"
-              : scraper.champions.progress())) ||
-          "0%",
-        emotes:
-          (scraper.emotes &&
-            (scraper.emotes.complete ? "100%" : scraper.emotes.progress())) ||
-          "0%",
-        icons:
-          (scraper.icons &&
-            (scraper.icons.complete ? "100%" : scraper.icons.progress())) ||
-          "0%",
-      },
-    };
+  recognize() {
+    const views = [
+      ["skins", scraper.skins],
+      ["loot", scraper.loot],
+      ["champions", scraper.champions],
+      ["emotes", scraper.emotes],
+      ["icons", scraper.icons],
+    ];
 
-    const scanningFinished = Object.values(info.progress).reduce(
-      (prev, curr) => prev && curr === "100%",
-      true
-    );
-
-    scraper.updateAssistant(
-      <>
-        <p>
-          Current view: {info.view}
-          <br />
-          Loot: {info.progress.loot}
-          <br />
-          Skins: {info.progress.skins}
-          <br />
-          Champions: {info.progress.champions}
-          <br />
-          Emotes: {info.progress.emotes}
-          <br />
-          Icons: {info.progress.icons}
-        </p>
-        {scanningFinished && "Scanning is finished :)"}
-        <button onClick={() => scraper.download()}>Download ZIP</button>
-      </>
-    );
-
-    // if (info.progress.icons === "100%") {
-    //   scraper.icons.recognize();
-    //   if (typeof scraper.setImg1 == "function" && scraper.icons.canvasList[0])
-    //     scraper.setImg1(scraper.icons.canvasList[0].toDataURL());
-    //   scraper.setImg1 = null;
-    //   if (typeof scraper.setImg2 == "function" && scraper.icons.canvasList[1])
-    //     scraper.setImg2(scraper.icons.canvasList[1].toDataURL());
-    //   scraper.setImg2 = null;
-    //   if (typeof scraper.setImg3 == "function" && scraper.icons.canvasList[2])
-    //     scraper.setImg3(scraper.icons.canvasList[2].toDataURL());
-    //   scraper.setImg3 = null;
-    //   if (typeof scraper.setImg4 == "function" && scraper.icons.canvasList[3])
-    //     scraper.setImg4(scraper.icons.canvasList[3].toDataURL());
-    //   scraper.setImg4 = null;
-    //   if (typeof scraper.setImg5 == "function" && scraper.icons.canvasList[4])
-    //     scraper.setImg5(scraper.icons.canvasList[4].toDataURL());
-    //   scraper.setImg5 = null;
-    //   if (typeof scraper.setImg6 == "function" && scraper.icons.canvasList[5])
-    //     scraper.setImg6(scraper.icons.canvasList[5].toDataURL());
-    //   scraper.setImg6 = null;
-    // }
-
-    requestAnimationFrame(scraper.loop);
+    views.forEach(([viewName, view]) => {
+      view.recognize();
+    });
   },
 
   download() {
@@ -127,7 +66,7 @@ const scraper: Scraper = {
       view.annotateImages();
 
       view.canvasList.forEach((canvas: HTMLCanvasElement, i: number) => {
-        if (canvas.height < 10) return;
+        if (canvas.height < 200) return;
         const index = view.canvasList.length > 1 ? `_${i}` : "";
         zip.file(
           `${viewName}_annotated_${index}.png`,
@@ -139,7 +78,7 @@ const scraper: Scraper = {
       });
 
       view.rawCanvasList.forEach((canvas: HTMLCanvasElement, i: number) => {
-        if (canvas.height < 10) return;
+        if (canvas.height < 200) return;
         const index = view.canvasList.length > 1 ? `_${i}` : "";
         zip.file(
           `${viewName}_original_${index}.png`,
@@ -167,7 +106,6 @@ const scraper: Scraper = {
     this.champions = new Champions(this.videoElement, scraper.getCurrView);
     this.emotes = new Emotes(this.videoElement, scraper.getCurrView);
     this.icons = new Icons(this.videoElement, scraper.getCurrView);
-    scraper.loop();
   },
 
   startCapture(onSuccess) {

@@ -23,7 +23,7 @@ const ScrapeView = (props: Props) => {
     ].forEach((type) => {
       if (typeof (scraper as any)[type] !== "undefined") {
         output[type] = {
-          loaded: scraper[type].progress(),
+          loaded: (scraper as any)[type].progress(),
           isActive: scraper.getCurrView() === type,
         };
       }

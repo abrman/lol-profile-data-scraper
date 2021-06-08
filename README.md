@@ -43,7 +43,7 @@ In simple terms the plan of this project is to guide the user to scroll the view
 ⚫ Chromas
 
 **Present usable data:**
-⚫ Create front end UI
+🟢 Create front end UI
 ⚫ Currencies spent on owned items
 ⚫ Ideal champions to craft to maximize champions owned
 ⚫ Blue essence & Orange essence if everything was disenchanted
@@ -64,14 +64,15 @@ In simple terms the plan of this project is to guide the user to scroll the view
 **Utility:**
 🟢 Large screenshot support:
 Implement support for skin & loot libraries that span in height over 32767px (canvas height limit in most modern browsers)
-
-⚫ Interface manager improvements:
+🟢 Interface manager improvements:
 Explore faster ways to get current view. Like One draw call and asking for data of interesting pixels rather than doing a 1x1px draw calls multiple times.
+⚫ Allow each view to alert the user that "show unowned" is enabled
 
 **Extra:**
 ⚫ ALL OUT KDA Seraphine has 3 forms
-![KDA Seraphine skin](/readme_assets/kda_seraphine.png?raw=true)
 ```
+
+![KDA Seraphine skin](/readme_assets/kda_seraphine.png?raw=true)
 
 # The problem this tool aims to solve
 
