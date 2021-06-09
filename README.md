@@ -67,6 +67,7 @@ Implement support for skin & loot libraries that span in height over 32767px (ca
 🟢 Interface manager improvements:
 Explore faster ways to get current view. Like One draw call and asking for data of interesting pixels rather than doing a 1x1px draw calls multiple times.
 ⚫ Allow each view to alert the user that "show unowned" is enabled
+⚫ Fetch lookup data caching (don't want to call fetch requests twice for same file)
 
 **Extra:**
 ⚫ ALL OUT KDA Seraphine has 3 forms
