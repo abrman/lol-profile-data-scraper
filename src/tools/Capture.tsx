@@ -397,7 +397,7 @@ export default class Capture {
         .data
     ).filter((_, i) => i % 4 === 0);
     const scrollBar = redChannel
-      .map((v) => (v > 32 && v < 150 ? 1 : 0))
+      .map((v) => (v > 32 && v < 210 ? 1 : 0))
       .join("");
     if (scrollBar.indexOf("1") === -1) {
       return {
