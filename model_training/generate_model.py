@@ -719,7 +719,7 @@ if input_task.lower() == "all" or input_task.startswith("4"):
             loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
             metrics=['accuracy'])
 
-        ward_model.fit( ward_train_images, ward_train_labels, epochs=100)
+        ward_model.fit( ward_train_images, ward_train_labels, epochs=300)
 
         ward_model.summary()
         save_model(ward_model, "wards")
@@ -903,17 +903,17 @@ if input_task.lower() == "all" or input_task.startswith("4"):
         coll_skins_train_images = np.array(coll_skins_train_images)
         coll_skins_train_labels = np.array(coll_skins_train_labels)
 
-        if os.path.isdir(os.path.join("model_training","models","coll_skins","model")):
-            model_coll_skins = load_model("coll_skins")
-        else:
-            model_coll_skins = tf.keras.Sequential([
-                tf.keras.layers.Flatten(input_shape=(28, 28)),
-                tf.keras.layers.Dense(len(lookup_coll_skins))
-            ])
+        # if os.path.isdir(os.path.join("model_training","models","coll_skins","model")):
+        #     model_coll_skins = load_model("coll_skins")
+        # else:
+        model_coll_skins = tf.keras.Sequential([
+            tf.keras.layers.Flatten(input_shape=(28, 28)),
+            tf.keras.layers.Dense(len(lookup_coll_skins))
+        ])
 
-            model_coll_skins.compile(optimizer='adam',
-                loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-                metrics=['accuracy'])
+        model_coll_skins.compile(optimizer='adam',
+            loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+            metrics=['accuracy'])
                 
         # while True:
         #     model_coll_skins.fit( coll_skins_train_images, coll_skins_train_labels, epochs=10)
