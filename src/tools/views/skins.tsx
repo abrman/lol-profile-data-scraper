@@ -152,8 +152,6 @@ export default class Skins extends Capture {
 
     const rects = this.computeRects();
     this.classifiedRects = this.classifyRects(rects);
-
-    this.cropCanvasesByRects(this.classifiedRects);
   }
 
   annotateImages() {
@@ -184,6 +182,8 @@ export default class Skins extends Capture {
         );
       }
     });
+
+    this.cropCanvasesByRects(this.classifiedRects);
   }
 
   computeRects() {
@@ -216,7 +216,7 @@ export default class Skins extends Capture {
         iconHeight: 166,
         iconOffsetX: 154,
         iconOffsetY: 224,
-        lineHeight: 54,
+        lineHeight: 54.6,
       },
       "1024": {
         xStart: 17,

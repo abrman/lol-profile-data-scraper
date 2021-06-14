@@ -229,7 +229,7 @@ export default class Capture {
               matchingData[
                 i * w * 4 + x * 4 + c + (((x + y) * w * 4) % (w * h * 4))
               ];
-            if (Math.abs(search - match) < 60 || (search < 50 && match < 50)) {
+            if (Math.abs(search - match) < 50 || (search < 50 && match < 50)) {
             } else {
               continue search;
             }
@@ -299,7 +299,7 @@ export default class Capture {
 
   annotateImages() {
     for (let i = 0; i < this.canvasList.length; i++) {
-      this.rawCanvasList.push(document.createElement("canvas"));
+      if (i > 0) this.rawCanvasList.push(document.createElement("canvas"));
       this.rawCanvas.width = this.canvasList[i].width;
       this.rawCanvas.height = this.canvasList[i].height;
       this.rawCanvas.getContext("2d").drawImage(this.canvasList[i], 0, 0);
@@ -338,7 +338,7 @@ export default class Capture {
         const prevMaxY = minMaxArr[i - 1][1];
         const currMinY = minMaxArr[i][0];
         cropTop = Math.floor(currMinY + prevMaxY - 30000) / 2;
-        offsetRectsTop[i] = -cropTop;
+        offsetRectsTop[i] = cropTop;
       }
       if (i !== this.canvasList.length - 1) {
         // define crop bottom
@@ -353,16 +353,19 @@ export default class Capture {
       canvas.getContext("2d").putImageData(imageData, 0, 0);
 
       const rawCanvas = this.rawCanvasList[i];
-      const rawCanvasImageData = canvas
+      const rawCanvasImageData = rawCanvas
         .getContext("2d")
         .getImageData(0, cropTop, rawCanvas.width, cropBottom - cropTop);
       rawCanvas.height = cropBottom - cropTop;
       rawCanvas.getContext("2d").putImageData(rawCanvasImageData, 0, 0);
     }
 
-    rects.forEach((rect) => {
-      rect.y = rect.y - offsetRectsTop[this.canvasList.indexOf(rect.canvas)];
-    });
+    // rects.map((rect) => ({
+    //   ...rect,
+    //   y: rect.y - offsetRectsTop[this.canvasList.indexOf(rect.canvas)],
+    // }));
+
+    // return rects;
   }
 
   cropAlphaFromCanvases() {
