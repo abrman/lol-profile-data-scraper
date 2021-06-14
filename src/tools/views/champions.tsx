@@ -57,7 +57,13 @@ export default class Champions extends Capture {
     };
     super(video, options, checkFunction);
 
+    this.isViewingUnowned = false;
     this.prepareClassificationAssets();
+  }
+
+  cropAlphaFromCanvases() {
+    super.cropAlphaFromCanvases();
+    this.isViewingUnowned = this.checkIsViewingUnowned();
   }
 
   recognize() {
@@ -128,6 +134,7 @@ export default class Champions extends Capture {
   lookupTable: LookupTable;
   championCollectionModel: tf.LayersModel;
   classifiedRects: Rect[];
+  isViewingUnowned: boolean | null;
 
   async prepareClassificationAssets() {
     let [lookupTableLoot, lookupTableChampions, championCollectionModel] =
@@ -153,8 +160,6 @@ export default class Champions extends Capture {
   }
 
   classifyRects(rects: Rect[]) {
-    const isViewingUnowned = this.isViewingUnowned();
-
     rects.forEach((rect: Rect, i: number) => {
       const prediction = this.getPredictionFromRect(
         rect,
@@ -162,7 +167,7 @@ export default class Champions extends Capture {
         this.lookupTable
       );
       if (typeof prediction !== "undefined") {
-        const ownership = isViewingUnowned
+        const ownership = this.isViewingUnowned
           ? this.checkOwnershipFromRect(rect)
           : true;
         rects[i] = {
@@ -376,7 +381,7 @@ export default class Champions extends Capture {
       if (x < this.canvas.width) {
         rects.push({
           canvas: this.canvasList[canvasIndex],
-          cat: "coll_skin",
+          cat: "coll_champ",
           x,
           y,
           w: offset.iconWidth,
@@ -415,7 +420,7 @@ export default class Champions extends Capture {
     return rects;
   }
 
-  isViewingUnowned() {
+  checkIsViewingUnowned() {
     const check = {
       "1024": { x: 30, y: 294 },
       "1280": { x: 37, y: 373 },
