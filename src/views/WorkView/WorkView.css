@@ -1,0 +1,23 @@
+.work-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  height: 50vh;
+  animation: working-animation 0.8s ease 0s;
+}
+
+.work-center p {
+  margin-top: 0;
+}
+
+@keyframes working-animation {
+  0% {
+    transform: scale(1) translateY(200px);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1) translateY(0px);
+    opacity: 1;
+  }
+}

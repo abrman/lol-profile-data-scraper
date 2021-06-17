@@ -3,9 +3,10 @@ import scraper from "../../tools/scraper";
 import Loader from "./assets/Loader";
 import SmallLogo from "../../components/SmallLogo";
 import "./ScrapeView.css";
+import { finished } from "node:stream";
 
 type Props = {
-  setView: (viewName: string) => void;
+  setView: (viewName: string, callback?: () => void) => void;
   hide: boolean;
 };
 
@@ -32,15 +33,16 @@ const ScrapeView = (props: Props) => {
   };
 
   const [loadStates, setLoadStates] = useState(getLoadedStates());
+  const requestRef = React.useRef<number | null>();
 
   const updateLoadedStateLoop = () => {
     setLoadStates(getLoadedStates());
-    requestAnimationFrame(updateLoadedStateLoop);
+    requestRef.current = requestAnimationFrame(updateLoadedStateLoop);
   };
 
   useEffect(() => {
-    updateLoadedStateLoop();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    requestRef.current = requestAnimationFrame(updateLoadedStateLoop);
+    return () => cancelAnimationFrame(requestRef.current);
   }, []);
 
   return (
@@ -84,7 +86,7 @@ const ScrapeView = (props: Props) => {
                 ? " done"
                 : "")
             }
-            onClick={scraper.download}
+            onClick={() => props.setView("work")}
           >
             Finish scanning
           </div>
@@ -92,7 +94,7 @@ const ScrapeView = (props: Props) => {
         <div className="instructions">
           <h2 style={{ marginTop: 0 }}>Instructions:</h2>
           <p>
-            Open up each of the views seen on the left.
+            Open up each of the views seen on the left in game client.
             <br />
             In each view do the following:
           </p>

@@ -8,6 +8,8 @@ import Champions from "./views/champions";
 import Emotes from "./views/emotes";
 import Icons from "./views/icons";
 
+import Data from "./Data";
+
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 
@@ -18,8 +20,17 @@ interface Scraper {
   getCurrView: () => string | false;
   startCapture: (onSuccess: () => void) => any;
   startScraping: () => void;
-  recognize: () => void;
-  download: () => void;
+  recognize: (callback?: () => void) => void;
+  download: (callback?: () => void) => void;
+  data: () => {
+    champions?: any;
+    skins?: any;
+    wards?: any;
+    emotes?: any;
+    icons?: any;
+    chromas?: any;
+    [x: string]: any;
+  };
   skins: any;
   loot: any;
   champions: any;
@@ -37,7 +48,25 @@ const scraper: Scraper = {
   emotes: null,
   icons: null,
 
-  recognize() {
+  data() {
+    let rects: any = [];
+
+    if (typeof scraper.loot.classifiedRects !== "undefined")
+      rects.push(scraper.loot.classifiedRects);
+    if (typeof scraper.champions.classifiedRects !== "undefined")
+      rects.push(scraper.champions.classifiedRects);
+    if (typeof scraper.skins.classifiedRects !== "undefined")
+      rects.push(scraper.skins.classifiedRects);
+
+    rects = rects
+      .flatMap((v: any) => v)
+      .filter((v: any) => typeof v.name !== "undefined");
+
+    const data = new Data(scraper.loot.lookupTable, rects);
+    return data;
+  },
+
+  recognize(callback?) {
     const views = [
       ["skins", scraper.skins],
       ["loot", scraper.loot],
@@ -49,9 +78,13 @@ const scraper: Scraper = {
     views.forEach(([viewName, view]) => {
       view.recognize();
     });
+
+    if (typeof callback === "function") {
+      callback();
+    }
   },
 
-  download() {
+  download(callback?) {
     const zip = new JSZip();
     const views = [
       ["skins", scraper.skins],
@@ -90,6 +123,32 @@ const scraper: Scraper = {
       });
     });
 
+    // let rects: any = [];
+
+    // if (typeof scraper.loot.classifiedRects !== "undefined")
+    //   rects.push(scraper.loot.classifiedRects);
+    // if (typeof scraper.champions.classifiedRects !== "undefined")
+    //   rects.push(scraper.champions.classifiedRects);
+    // if (typeof scraper.skins.classifiedRects !== "undefined")
+    //   rects.push(scraper.skins.classifiedRects);
+
+    // console.log(rects);
+    // rects = rects
+    //   .flatMap((v: any) => v)
+    //   .filter((v: any) => typeof v.name !== "undefined");
+
+    // console.log(rects);
+
+    // const data = new Data(scraper.loot.lookupTable, rects);
+
+    // // const data: any = {};
+
+    // // data["skins"] = scraper.skins.classifiedRects;
+    // // data["champions"] = scraper.champions.classifiedRects;
+    // // data["loot"] = scraper.loot.classifiedRects;
+
+    // zip.file(`data.json`, JSON.stringify(data.champions));
+
     zip.generateAsync({ type: "blob" }).then(function (content) {
       saveAs(content, "account_data.zip");
     });
@@ -108,7 +167,7 @@ const scraper: Scraper = {
     this.icons = new Icons(this.videoElement, scraper.getCurrView);
   },
 
-  startCapture(onSuccess) {
+  async startCapture(onSuccess) {
     mediaStreamManager.startCapture(onSuccess);
   },
 };

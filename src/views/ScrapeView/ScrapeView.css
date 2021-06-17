@@ -4,6 +4,23 @@
   flex-direction: column;
 }
 
+.scrape-view.hide .row {
+  animation: hide-scrape-view-animation 0.5s ease 0s;
+  transform: translateY(-9999px);
+  opacity: 0;
+}
+
+@keyframes hide-scrape-view-animation {
+  0% {
+    transform: translateY(0px);
+    opacity: 1;
+    display: block;
+  }
+  100% {
+    transform: translateY(-200px);
+    opacity: 0;
+  }
+}
 .scrape-view .row {
   display: flex;
 }

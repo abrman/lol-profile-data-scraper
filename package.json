@@ -5,6 +5,7 @@
   "private": true,
   "author": "matthewabrman",
   "license": "UNLICENSED",
+  "homepage": "https://lotsofloot.matthewabrman.com/",
   "dependencies": {
     "@tensorflow/tfjs": "^3.6.0",
     "@testing-library/jest-dom": "^5.12.0",
