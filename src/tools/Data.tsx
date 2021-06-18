@@ -144,12 +144,24 @@ export default class Data {
       //   ),
       // },
       {
-        Header: "Name",
+        Header: (
+          <>
+            Champion, Mastery and
+            <br />
+            Chest Avavilability
+          </>
+        ),
         accessor: "name",
         Cell: (data: any) => {
           const row = data.row.original;
           return [
-            row.owned ? <strong>{row.name}</strong> : row.name,
+            row.owned ? (
+              <span>
+                <strong>{row.name}</strong>
+              </span>
+            ) : (
+              <span>{row.name}</span>
+            ),
             row.mastery > 0 ? (
               <img
                 src={`/assets/mastery_${row.mastery}.png`}
@@ -197,29 +209,42 @@ export default class Data {
       //       : data.value,
       // },
       {
-        Header: "Loot",
-        columns: [
-          {
-            Header: "Shards",
-            accessor: "shards",
-          },
-          {
-            Header: "Permanents",
-            accessor: "perms",
-          },
-          {
-            Header: "Lvl 6 Tokens",
-            accessor: "token6",
-          },
-          {
-            Header: "Lvl 7 Tokens",
-            accessor: "token7",
-          },
-          {
-            Header: "Eternal Shards",
-            accessor: "eternalShards",
-          },
-        ],
+        Header: "Shards",
+        accessor: "shards",
+      },
+      {
+        Header: "Permanents",
+        accessor: "perms",
+      },
+      {
+        Header: (
+          <>
+            Lvl 6
+            <br />
+            Tokens
+          </>
+        ),
+        accessor: "token6",
+      },
+      {
+        Header: (
+          <>
+            Lvl 7
+            <br />
+            Tokens
+          </>
+        ),
+        accessor: "token7",
+      },
+      {
+        Header: (
+          <>
+            Eternal
+            <br />
+            Shards
+          </>
+        ),
+        accessor: "eternalShards",
       },
       {
         Header: "Store Price",
@@ -243,7 +268,13 @@ export default class Data {
         },
       },
       {
-        Header: "Upgrade Price",
+        Header: (
+          <>
+            Upgrade
+            <br />
+            Price
+          </>
+        ),
         accessor: "ugradeBE",
         Cell: (data: any) => [
           data.value,
@@ -255,32 +286,39 @@ export default class Data {
         ],
       },
       {
-        Header: "Disenchat Price",
-        columns: [
-          {
-            Header: "Shard",
-            accessor: "disenchantS",
-            Cell: (data: any) => [
-              data.value,
-              <img
-                src={`/assets/be.png`}
-                alt="Blue Essence"
-                title="Blue Essence"
-              />,
-            ],
-          },
-          {
-            Header: "Permanent",
-            accessor: "disenchantP",
-            Cell: (data: any) => [
-              data.value,
-              <img
-                src={`/assets/be.png`}
-                alt="Blue Essence"
-                title="Blue Essence"
-              />,
-            ],
-          },
+        Header: (
+          <>
+            Disenchat
+            <br />
+            Shard
+          </>
+        ),
+        accessor: "disenchantS",
+        Cell: (data: any) => [
+          data.value,
+          <img
+            src={`/assets/be.png`}
+            alt="Blue Essence"
+            title="Blue Essence"
+          />,
+        ],
+      },
+      {
+        Header: (
+          <>
+            Disenchat
+            <br />
+            Permanent
+          </>
+        ),
+        accessor: "disenchantP",
+        Cell: (data: any) => [
+          data.value,
+          <img
+            src={`/assets/be.png`}
+            alt="Blue Essence"
+            title="Blue Essence"
+          />,
         ],
       },
     ];

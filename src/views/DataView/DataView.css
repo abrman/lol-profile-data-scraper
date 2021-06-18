@@ -23,4 +23,5 @@ table img {
   max-height: 20px;
   margin-left: 5px;
   transform: translateY(3px);
+  float: right;
 }
