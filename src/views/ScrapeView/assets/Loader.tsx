@@ -4,6 +4,7 @@ type Props = {
   name: string;
   active?: boolean;
   loaded?: string;
+  warning?: string | null;
 };
 
 const Loader = (props: Props) => {
@@ -24,6 +25,12 @@ const Loader = (props: Props) => {
           }}
         ></div>
       </div>
+      {props.warning && (
+        <>
+          <div className="warning">{props.warning}</div>
+          <div className="warning-point">!</div>
+        </>
+      )}
     </div>
   );
 };

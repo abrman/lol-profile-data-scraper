@@ -26,6 +26,10 @@ const ScrapeView = (props: Props) => {
         output[type] = {
           loaded: (scraper as any)[type].progress(),
           isActive: scraper.getCurrView() === type,
+          warnMessage:
+            typeof (scraper as any)[type].warnMessage !== "undefined"
+              ? (scraper as any)[type].warnMessage
+              : null,
         };
       }
     });
@@ -73,6 +77,7 @@ const ScrapeView = (props: Props) => {
                   name={type}
                   loaded={loadStates[type].loaded}
                   active={loadStates[type].isActive}
+                  warning={loadStates[type].warnMessage}
                 />
               );
             return "";

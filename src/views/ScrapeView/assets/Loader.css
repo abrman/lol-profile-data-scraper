@@ -40,3 +40,21 @@
   transition: transform 0.2s ease;
   transform-origin: left;
 }
+
+.warning {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ff006a;
+  margin: 10px 0;
+}
+
+.warning-point {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  left: -20px;
+  top: 45px;
+  border-radius: 10px;
+  color: #ff006a;
+  font-size: 34px;
+}

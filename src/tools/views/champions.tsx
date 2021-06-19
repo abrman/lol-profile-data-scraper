@@ -58,6 +58,7 @@ export default class Champions extends Capture {
     super(video, options, checkFunction);
 
     this.isViewingUnowned = false;
+    this.warnMessage = null;
     this.prepareClassificationAssets();
   }
 
@@ -135,6 +136,7 @@ export default class Champions extends Capture {
   championCollectionModel: tf.LayersModel;
   classifiedRects: Rect[];
   isViewingUnowned: boolean | null;
+  warnMessage: string | null;
 
   async prepareClassificationAssets() {
     let [lookupTableLoot, lookupTableChampions, championCollectionModel] =
@@ -418,6 +420,15 @@ export default class Champions extends Capture {
     }
 
     return rects;
+  }
+
+  attemptScreenshot() {
+    if (this.checkIsViewingUnowned()) {
+      this.warnMessage = `Make sure "Show Unowned" option is disabled in the client.`;
+      return;
+    }
+    this.warnMessage = null;
+    super.attemptScreenshot();
   }
 
   checkIsViewingUnowned() {
