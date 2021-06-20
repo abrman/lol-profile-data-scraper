@@ -229,7 +229,7 @@ export default class Capture {
               matchingData[
                 i * w * 4 + x * 4 + c + (((x + y) * w * 4) % (w * h * 4))
               ];
-            if (Math.abs(search - match) < 50 || (search < 50 && match < 50)) {
+            if (Math.abs(search - match) < 55 || (search < 50 && match < 50)) {
             } else {
               continue search;
             }
