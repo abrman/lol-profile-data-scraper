@@ -14,6 +14,15 @@ table td {
   border-bottom: 1px solid black;
   border-right: 1px solid black;
 }
+
+table td {
+  text-align: right;
+}
+
+table td:first-child span {
+  float: left;
+}
+
 table th:last-child,
 table td:last-child {
   border-right: 0;
@@ -21,7 +30,16 @@ table td:last-child {
 
 table img {
   max-height: 20px;
+}
+
+table td:first-child img {
   margin-left: 5px;
   transform: translateY(3px);
   float: right;
+}
+
+table img.currency {
+  position: relative;
+  top: 4px;
+  margin: 0 4px;
 }

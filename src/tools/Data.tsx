@@ -44,10 +44,19 @@ type championsTableRow = {
 export default class Data {
   loot_lookup_table: LookupTable;
   champions: { columns: any; data: championsTableRow[] };
+  blueEssenceSpent: number;
 
   constructor(loot_lookup_table: LookupTable, rects: Rect[]) {
     this.loot_lookup_table = loot_lookup_table;
     this.champions = this.championsTable(rects);
+    this.blueEssenceSpent = this.calcBlueEssenceSpent(this.champions);
+  }
+
+  calcBlueEssenceSpent(champions: any) {
+    const data = champions.data;
+    return data
+      .flatMap((v: any) => (v.owned ? v.storeBE : []))
+      .reduce((a: number, b: number) => a + b);
   }
 
   championsTable(rects: Rect[]) {
@@ -256,6 +265,7 @@ export default class Data {
               src={`/assets/be.png`}
               alt="Blue Essence"
               title="Blue Essence"
+              className="currency"
             />,
             "/",
             row.storeRP,
@@ -263,6 +273,7 @@ export default class Data {
               src={`/assets/rp.png`}
               alt="Riot Points"
               title="Riot Points"
+              className="currency"
             />,
           ];
         },
@@ -282,6 +293,7 @@ export default class Data {
             src={`/assets/be.png`}
             alt="Blue Essence"
             title="Blue Essence"
+            className="currency"
           />,
         ],
       },
@@ -300,6 +312,7 @@ export default class Data {
             src={`/assets/be.png`}
             alt="Blue Essence"
             title="Blue Essence"
+            className="currency"
           />,
         ],
       },
@@ -318,6 +331,7 @@ export default class Data {
             src={`/assets/be.png`}
             alt="Blue Essence"
             title="Blue Essence"
+            className="currency"
           />,
         ],
       },

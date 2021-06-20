@@ -29,6 +29,7 @@ interface Scraper {
     emotes?: any;
     icons?: any;
     chromas?: any;
+    blueEssenceSpent?: number;
     [x: string]: any;
   };
   skins: any;

@@ -62,6 +62,12 @@ export default class Champions extends Capture {
     this.prepareClassificationAssets();
   }
 
+  lookupTable: LookupTable;
+  championCollectionModel: tf.LayersModel;
+  classifiedRects: Rect[];
+  isViewingUnowned: boolean | null;
+  warnMessage: string | null;
+
   cropAlphaFromCanvases() {
     super.cropAlphaFromCanvases();
     this.isViewingUnowned = this.checkIsViewingUnowned();
@@ -131,12 +137,6 @@ export default class Champions extends Capture {
       }
     });
   }
-
-  lookupTable: LookupTable;
-  championCollectionModel: tf.LayersModel;
-  classifiedRects: Rect[];
-  isViewingUnowned: boolean | null;
-  warnMessage: string | null;
 
   async prepareClassificationAssets() {
     let [lookupTableLoot, lookupTableChampions, championCollectionModel] =

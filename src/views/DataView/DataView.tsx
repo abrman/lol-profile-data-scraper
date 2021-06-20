@@ -36,7 +36,7 @@ const DataView = (props: Props) => {
           {rows.map((row, i) => {
             prepareRow(row);
             return (
-              <tr {...row.getRowProps()}>
+              <tr key={`row_${i}`} {...row.getRowProps()}>
                 {row.cells.map((cell) => {
                   return (
                     <td {...cell.getCellProps()}>{cell.render("Cell")}</td>
@@ -53,6 +53,10 @@ const DataView = (props: Props) => {
   return (
     <div className={"work-view" + (props.hide ? " hide" : "")}>
       <SmallLogo animateIn={false} />
+      <h2>
+        Total blue essense spent for champions assuming all were bought with
+        blue essence: {tableData.blueEssenceSpent}
+      </h2>
       <Table
         columns={tableData.champions.columns}
         data={tableData.champions.data}
