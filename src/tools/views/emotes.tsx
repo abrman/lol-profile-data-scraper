@@ -61,6 +61,36 @@ export default class Emotes extends Capture {
     };
     super(video, options, checkFunction);
 
+    this.warnMessage = null;
     //   this.prepareClassificationAssets();
+  }
+
+  warnMessage: string | null;
+
+  attemptScreenshot() {
+    if (this.checkIsViewingUnowned()) {
+      this.warnMessage = `Make sure "Show Unowned" option is disabled in the client.`;
+      return;
+    }
+    this.warnMessage = null;
+    super.attemptScreenshot();
+  }
+
+  checkIsViewingUnowned() {
+    const check = {
+      "1024": { x: 206, y: 150 },
+      "1280": { x: 258, y: 190 },
+      "1600": { x: 322, y: 236 },
+      "1920": { x: 386, y: 284 },
+    }[this.clientWidth];
+
+    this.workCanvas
+      .getContext("2d")
+      .drawImage(this.videoElement.current, check.x, check.y, 1, 1, 0, 0, 1, 1);
+    const checkPixel = this.workCanvas
+      .getContext("2d")
+      .getImageData(0, 0, 1, 1).data;
+
+    return checkPixel[0] > 50;
   }
 }
