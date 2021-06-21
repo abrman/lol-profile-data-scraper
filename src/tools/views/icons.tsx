@@ -69,6 +69,36 @@ export default class Icons extends Capture {
     };
     super(video, options, checkFunction);
 
+    this.warnMessage = null;
     //   this.prepareClassificationAssets();
+  }
+
+  warnMessage: string | null;
+
+  attemptScreenshot() {
+    if (!this.checkIsViewingMyCollection()) {
+      this.warnMessage = `Make sure you have "My Collection" selected from the dropdown in the client.`;
+      return;
+    }
+    this.warnMessage = null;
+    super.attemptScreenshot();
+  }
+
+  checkIsViewingMyCollection() {
+    const check = {
+      "1024": { x: 46, y: 501 },
+      "1280": { x: 58, y: 628 },
+      "1600": { x: 72, y: 786 },
+      "1920": { x: 86, y: 942 },
+    }[this.clientWidth];
+
+    this.workCanvas
+      .getContext("2d")
+      .drawImage(this.videoElement.current, check.x, check.y, 1, 1, 0, 0, 1, 1);
+    const checkPixel = this.workCanvas
+      .getContext("2d")
+      .getImageData(0, 0, 1, 1).data;
+
+    return checkPixel[0] > 50;
   }
 }
