@@ -420,7 +420,22 @@ if input_task.lower() == "all" or input_task == "3":
             return
 
         # 1.A loading and preparing assets
-        ward = read_png(ward_image_path)
+        ward = read_png(ward_image_path)        
+        ward_shape = np.shape(ward)
+        
+        # If shape doesn't match, we're crop resizing to fit the rest of the wards
+        if ( ward_shape[0] > 550 or ward_shape[1] > 460):
+            if ( ward_shape[1]/ward_shape[0] > 460/550):
+                # image ratio is wider than targer
+                ward = cv2.resize(ward, (int(550/ward_shape[0]*ward_shape[1]) ,550))
+                padding = (np.shape(ward)[1]-460)//2
+                ward = ward[0:550,padding:460+padding]
+            else:
+                # image ratio is taller than target (untested - there was no use case for this)
+                ward = cv2.resize(ward, (460, int(460/ward_shape[1]*ward_shape[0])))
+                padding = (np.shape(ward)[0]-550)//2
+                ward = ward[padding:550+padding,0:460]
+            
         ward = cv2.copyMakeBorder(ward[0:ward.shape[1],:], 0, 7, 7, 0, cv2.BORDER_CONSTANT,value=(0,0,0,0))
         ward_background = cv2.resize(read_png(os.path.join("model_training","assets","border_images","wardskin_background.png")), (467,467))
         shard_border = cv2.resize(read_png(os.path.join("model_training","assets","border_images","shard.png")), (467,467))
