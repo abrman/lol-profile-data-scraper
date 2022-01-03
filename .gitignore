@@ -8,9 +8,6 @@
 # testing
 /coverage
 
-# production
-/build
-
 #training_data
 /model_training/training_data
 /model_training/assets
