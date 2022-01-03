@@ -11,6 +11,7 @@ type Props = {
 
 const DataView = (props: Props) => {
   const tableData = useMemo(() => scraper.data(), []);
+  console.log(tableData.skins);
 
   const Table = ({ columns, data }: { columns: any; data: any }) => {
     // Use the state and functions returned from useTable to build your UI
@@ -60,6 +61,7 @@ const DataView = (props: Props) => {
         </h2> */}
         <button
           style={{
+            cursor: "pointer",
             margin: "10px 0 30px",
             background: "#0a98ff",
             border: "none",
@@ -72,15 +74,19 @@ const DataView = (props: Props) => {
             scraper.download();
           }}
         >
-          DOWNLOAD GENERATED SCERENSHOTS
+          DOWNLOAD GENERATED CSV AND SCREENSHOTS
         </button>
         <Table
           columns={tableData.champions.columns}
           data={tableData.champions.data}
         />
-        <a href="#" onClick={() => scraper.download()}>
-          Download
-        </a>
+        <br />
+        {tableData.skins.data.length > 0 && (
+          <Table
+            columns={tableData.skins.columns}
+            data={tableData.skins.data}
+          />
+        )}
       </div>
     </div>
   );

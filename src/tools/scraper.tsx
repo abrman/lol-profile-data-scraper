@@ -13,6 +13,8 @@ import Data from "./Data";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 
+import toCSV from "objects-to-csv";
+
 interface Scraper {
   videoElement: React.RefObject<HTMLVideoElement>;
   videoWidth: number;
@@ -85,7 +87,7 @@ const scraper: Scraper = {
     }
   },
 
-  download(callback?) {
+  async download(callback?) {
     const zip = new JSZip();
     const views = [
       ["skins", scraper.skins],
@@ -149,6 +151,13 @@ const scraper: Scraper = {
     // // data["loot"] = scraper.loot.classifiedRects;
 
     // zip.file(`data.json`, JSON.stringify(data.champions));
+
+    const { skins, champions } = this.data();
+
+    const championsData = new toCSV(champions.data);
+    const skinsData = new toCSV(skins.data);
+    zip.file(`champions.csv`, await championsData.toString());
+    zip.file(`skins.csv`, await skinsData.toString());
 
     zip.generateAsync({ type: "blob" }).then(function (content) {
       saveAs(content, "account_data.zip");

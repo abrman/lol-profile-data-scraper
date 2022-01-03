@@ -1,5 +1,15 @@
 import { imag } from "@tensorflow/tfjs-core";
 
+import mastery1 from "../assets/mastery_1.png";
+import mastery2 from "../assets/mastery_2.png";
+import mastery3 from "../assets/mastery_3.png";
+import mastery4 from "../assets/mastery_4.png";
+import mastery5 from "../assets/mastery_5.png";
+import orangeEssence from "../assets/oe.png";
+import blueEssence from "../assets/be.png";
+import riotPoints from "../assets/rp.png";
+import chest from "../assets/chest_available.png";
+
 type LookupLabel = [id: number, name: string, price: number, legacy: number];
 type LookupLabels = LookupLabel[] | string[];
 
@@ -41,22 +51,89 @@ type championsTableRow = {
   disenchantP: number;
 };
 
+type skinTableRow = {
+  id: string | number;
+  name: string;
+  price: number;
+};
+
 export default class Data {
   loot_lookup_table: LookupTable;
   champions: { columns: any; data: championsTableRow[] };
+  skins: { columns: any; data: skinTableRow[] };
   blueEssenceSpent: number;
 
   constructor(loot_lookup_table: LookupTable, rects: Rect[]) {
     this.loot_lookup_table = loot_lookup_table;
     this.champions = this.championsTable(rects);
     this.blueEssenceSpent = this.calcBlueEssenceSpent(this.champions);
+    this.skins = this.skinsList(rects);
   }
 
   calcBlueEssenceSpent(champions: any) {
     const data = champions.data;
-    return data
-      .flatMap((v: any) => (v.owned ? v.storeBE : []))
-      .reduce((a: number, b: number) => a + b);
+    return [
+      0,
+      0,
+      ...data.flatMap((v: any) => (v.owned ? v.storeBE : [])),
+    ].reduce((a: number, b: number) => a + b);
+  }
+
+  skinsList(rects: Rect[]) {
+    let skins: Rect[] = [];
+
+    rects.forEach((rect) => {
+      if (rect.type === "collection_skin") {
+        skins.push(rect);
+      }
+    });
+
+    const skinPrices = Array.from(this.loot_lookup_table.skins as any).reduce(
+      (prev: any, curr: any) => ({
+        ...prev,
+        [curr[0]]: { id: curr[0], name: curr[1], price: curr[2] },
+      }),
+      {}
+    );
+
+    console.log(skins);
+
+    return {
+      columns: [
+        {
+          Header: "Skin name",
+          accessor: "name",
+          Cell: (data: any) => (
+            <div style={{ textAlign: "left" }}>{data.value}</div>
+          ),
+        },
+        {
+          Header: "RP price",
+          accessor: "price",
+          Cell: (data: any) => (
+            <div style={{ textAlign: "left" }}>
+              {data.value !== "special" && (
+                <img
+                  src={riotPoints}
+                  alt="Riot Points"
+                  title="Riot Points"
+                  className="currency"
+                />
+              )}{" "}
+              {data.value}
+            </div>
+          ),
+        },
+      ],
+      data: skins.map((rect) => (skinPrices as any)[rect.data[0]]),
+      // data: [
+      //   {
+      //     id: 123,
+      //     name: "Somename",
+      //     price: 1234,
+      //   },
+      // ],
+    };
   }
 
   championsTable(rects: Rect[]) {
@@ -173,7 +250,11 @@ export default class Data {
             ),
             row.mastery > 0 ? (
               <img
-                src={`/assets/mastery_${row.mastery}.png`}
+                src={
+                  ["", mastery1, mastery2, mastery3, mastery4, mastery5][
+                    row.mastery
+                  ]
+                }
                 alt={`Mastery level: ${row.mastery}`}
                 title={`Mastery level: ${row.mastery}`}
               />
@@ -181,11 +262,7 @@ export default class Data {
               ""
             ),
             row.chestAvail > 0 ? (
-              <img
-                src={`/assets/chest_available.png`}
-                alt="Chest available"
-                title="Chest available"
-              />
+              <img src={chest} alt="Chest available" title="Chest available" />
             ) : (
               ""
             ),
@@ -262,7 +339,7 @@ export default class Data {
           return [
             row.storeBE,
             <img
-              src={`/assets/be.png`}
+              src={blueEssence}
               alt="Blue Essence"
               title="Blue Essence"
               className="currency"
@@ -270,7 +347,7 @@ export default class Data {
             "/",
             row.storeRP,
             <img
-              src={`/assets/rp.png`}
+              src={riotPoints}
               alt="Riot Points"
               title="Riot Points"
               className="currency"
@@ -290,7 +367,7 @@ export default class Data {
         Cell: (data: any) => [
           data.value,
           <img
-            src={`/assets/be.png`}
+            src={blueEssence}
             alt="Blue Essence"
             title="Blue Essence"
             className="currency"
@@ -309,7 +386,7 @@ export default class Data {
         Cell: (data: any) => [
           data.value,
           <img
-            src={`/assets/be.png`}
+            src={blueEssence}
             alt="Blue Essence"
             title="Blue Essence"
             className="currency"
@@ -328,7 +405,7 @@ export default class Data {
         Cell: (data: any) => [
           data.value,
           <img
-            src={`/assets/be.png`}
+            src={blueEssence}
             alt="Blue Essence"
             title="Blue Essence"
             className="currency"
