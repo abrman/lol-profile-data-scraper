@@ -141,11 +141,11 @@ export default class Champions extends Capture {
   async prepareClassificationAssets() {
     let [lookupTableLoot, lookupTableChampions, championCollectionModel] =
       await Promise.all([
-        fetch("/lookup_data/loot.json").then((res) => res.json()),
-        fetch("/lookup_data/collection_champions.json").then((res) =>
+        fetch("lookup_data/loot.json").then((res) => res.json()),
+        fetch("lookup_data/collection_champions.json").then((res) =>
           res.json()
         ),
-        tf.loadLayersModel("/models/coll_champions/model.json"),
+        tf.loadLayersModel("models/coll_champions/model.json"),
       ]);
 
     this.lookupTable = lookupTableChampions.map((v: string) => {

@@ -68,9 +68,9 @@ export default class Skins extends Capture {
   async prepareClassificationAssets() {
     let [lookupTableLoot, lookupTableSkins, skinsCollectionModel] =
       await Promise.all([
-        fetch("/lookup_data/loot.json").then((res) => res.json()),
-        fetch("/lookup_data/collection_skins.json").then((res) => res.json()),
-        tf.loadLayersModel("/models/coll_skins/model.json"),
+        fetch("lookup_data/loot.json").then((res) => res.json()),
+        fetch("lookup_data/collection_skins.json").then((res) => res.json()),
+        tf.loadLayersModel("models/coll_skins/model.json"),
       ]);
 
     this.lookupTable = lookupTableSkins.map(
