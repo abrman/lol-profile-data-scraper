@@ -93,12 +93,12 @@ export default class Loot extends Capture {
   async prepareClassificationAssets() {
     const [lookupTable, champions, skins, wards, numbers, shard_permanent] =
       await Promise.all([
-        fetch("/lookup_data/loot.json").then((res) => res.json()),
-        tf.loadLayersModel("/models/champions/model.json"),
-        tf.loadLayersModel("/models/skins/model.json"),
-        tf.loadLayersModel("/models/wards/model.json"),
-        tf.loadLayersModel("/models/numbers/model.json"),
-        tf.loadLayersModel("/models/shard_permanent/model.json"),
+        fetch("lookup_data/loot.json").then((res) => res.json()),
+        tf.loadLayersModel("models/champions/model.json"),
+        tf.loadLayersModel("models/skins/model.json"),
+        tf.loadLayersModel("models/wards/model.json"),
+        tf.loadLayersModel("models/numbers/model.json"),
+        tf.loadLayersModel("models/shard_permanent/model.json"),
       ]);
 
     this.lookupTable = lookupTable;
