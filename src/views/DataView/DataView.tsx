@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import scraper from "../../tools/scraper";
-import SmallLogo from "../../components/SmallLogo";
+import Logo from "../WelcomeView/assets/Logo";
 import "./DataView.css";
 import { useTable } from "react-table";
 
@@ -51,19 +51,37 @@ const DataView = (props: Props) => {
   };
 
   return (
-    <div className={"work-view" + (props.hide ? " hide" : "")}>
-      <SmallLogo animateIn={false} />
-      <h2>
-        Total blue essense spent for champions assuming all were bought with
-        blue essence: {tableData.blueEssenceSpent}
-      </h2>
-      <Table
-        columns={tableData.champions.columns}
-        data={tableData.champions.data}
-      />
-      <a href="#" onClick={() => scraper.download()}>
-        Download
-      </a>
+    <div style={{ margin: "0 auto", width: 1080, textAlign: "center" }}>
+      <div className={"work-view" + (props.hide ? " hide" : "")}>
+        <Logo justTitle={true} />
+        {/* <h2>
+          Total blue essense spent for champions assuming all were bought with
+          blue essence: {tableData.blueEssenceSpent}
+        </h2> */}
+        <button
+          style={{
+            margin: "10px 0 30px",
+            background: "#0a98ff",
+            border: "none",
+            color: "#fff",
+            padding: "1rem 2rem",
+            fontSize: "20px",
+            borderRadius: "2rem",
+          }}
+          onClick={() => {
+            scraper.download();
+          }}
+        >
+          DOWNLOAD GENERATED SCERENSHOTS
+        </button>
+        <Table
+          columns={tableData.champions.columns}
+          data={tableData.champions.data}
+        />
+        <a href="#" onClick={() => scraper.download()}>
+          Download
+        </a>
+      </div>
     </div>
   );
 };

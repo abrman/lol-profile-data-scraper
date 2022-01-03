@@ -14,7 +14,7 @@ export default class Emotes extends Capture {
       screenshotArea: {
         "1920": { x: 49, y: 331, w: 505, h: 719, add: 120, yBottomCheck: 1073 },
         "1600": { x: 40, y: 275, w: 422, h: 597, add: 100, yBottomCheck: 895 },
-        "1280": { x: 31, y: 220, w: 340, h: 481, add: 85, yBottomCheck: 716 },
+        "1280": { x: 31, y: 220, w: 340, h: 481, add: 85, yBottomCheck: 717 },
         "1024": { x: 24, y: 174, w: 274, h: 380, add: 64, yBottomCheck: 573 },
       },
 
