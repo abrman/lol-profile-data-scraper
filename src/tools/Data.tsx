@@ -5,6 +5,8 @@ import mastery2 from "../assets/mastery_2.png";
 import mastery3 from "../assets/mastery_3.png";
 import mastery4 from "../assets/mastery_4.png";
 import mastery5 from "../assets/mastery_5.png";
+import mastery6 from "../assets/mastery_6.png";
+import mastery7 from "../assets/mastery_7.png";
 import orangeEssence from "../assets/oe.png";
 import blueEssence from "../assets/be.png";
 import riotPoints from "../assets/rp.png";
@@ -251,9 +253,16 @@ export default class Data {
             row.mastery > 0 ? (
               <img
                 src={
-                  ["", mastery1, mastery2, mastery3, mastery4, mastery5][
-                    row.mastery
-                  ]
+                  [
+                    "",
+                    mastery1,
+                    mastery2,
+                    mastery3,
+                    mastery4,
+                    mastery5,
+                    mastery6,
+                    mastery7,
+                  ][row.mastery]
                 }
                 alt={`Mastery level: ${row.mastery}`}
                 title={`Mastery level: ${row.mastery}`}
