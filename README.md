@@ -1,7 +1,7 @@
 # League of Legends profile data scraper
 
-[Try it online!](https://abrman.github.io/lol-profile-data-scraper/)
-[Watch video of how to use the tool](https://www.youtube.com/watch?v=hKzVoFwX5RU)
+- [Try it online!](https://abrman.github.io/lol-profile-data-scraper/)
+- [Watch video of how to use the tool](https://www.youtube.com/watch?v=hKzVoFwX5RU)
 
 ## From the author
 
