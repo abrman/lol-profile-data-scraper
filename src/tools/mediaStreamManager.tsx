@@ -19,6 +19,11 @@ export const mediaStreamManager: MediaStreamManager = {
         });
       } catch (err) {
         console.error("Error: " + err);
+        alert(
+          "Error: " +
+            err +
+            "\nIt's possible that your browser doesn't support this feature."
+        );
       }
       return this.captureStream;
     })().then((stream) => {
