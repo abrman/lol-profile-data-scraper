@@ -1,6 +1,18 @@
 # League of Legends profile data scraper
 
-This project is a WIP
+[Try it online!](https://abrman.github.io/lol-profile-data-scraper/)
+[Watch video of how to use the tool](https://www.youtube.com/watch?v=hKzVoFwX5RU)
+
+## From the author
+
+This project was something I did to get a little familiar wih React and Machine learning in early-mid 2020. I no longer intend to update it.
+The current published version should contain all champions and skins up until January 1st 2022.
+
+## Updating the machine learning models
+
+Whenever a new champion is released, running `model_training/generate_model.py` should do everything from downloading assets, augmenting the data & training the model. Ideally can be done in one go (can take a couple hours). It should update the model within the react app, so all you need to publish, is just `npm run build` and commit changes.
+
+## What this tool does
 
 This tool allows user to scrape data from their League of Legends profile via Screen Sharing API directly on a website without any data being shared and all computation done locally.
 
@@ -72,9 +84,3 @@ Explore faster ways to get current view. Like One draw call and asking for data 
 **Extra:**
 ⚫ ALL OUT KDA Seraphine has 3 forms
 ```
-
-![KDA Seraphine skin](/readme_assets/kda_seraphine.png?raw=true)
-
-# The problem this tool aims to solve
-
-![Loot image](/readme_assets/loot.png?raw=true)
