@@ -19,9 +19,16 @@ const WelcomeView = (props: Props) => {
     <div className={"welcome-view" + (props.hide ? " hide" : "")}>
       <Logo />
       <WelcomeIcons />
-      <div className="share-screen" onClick={shareWindow}>
-        Share game client window
-      </div>
+      {typeof (navigator.mediaDevices as any).getDisplayMedia !== "function" ? (
+        <div className="share-screen" onClick={shareWindow}>
+          Share game client window
+        </div>
+      ) : (
+        <div className="unsupported">
+          Your browser might not support some of the technologies required to
+          run this app. Please update your web browser.
+        </div>
+      )}
     </div>
   );
 };
